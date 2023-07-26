@@ -1,4 +1,5 @@
 use std::sync::Arc;
+#[derive(Debug)]
 pub struct Neuron{
     v_mem :f64,
     v_th :f64, //configurabile
@@ -26,7 +27,6 @@ impl Default for Neuron {
         }
     }
 }
-
 impl Neuron{
     
     pub fn new(v_th: f64, v_rest: f64, v_reset: f64, tau: f64) -> Self{
@@ -41,22 +41,24 @@ impl Neuron{
     }
 
     //to call periodically with a sampling time that grows for every impulse not received
-    pub fn update(&mut Self, weights: Vec<f64>, is_active: Vec<bool>, ts: f64)->bool{
+    pub fn update(&mut self, weights: Vec<f64>, is_active: Vec<bool>, ts: f64)->bool{
 
         //using LIF: v_mem(ts)= v_rest+[v_mem(ts-1)-v_rest]*e^((ts-ts-1)/tau)  +SUM(0->N){si*wi}
-        Self.v_mem=Self.v_rest+(Self.v_mem-Self.v_rest)*exp(ts/Self.tau);
+        self.v_mem=self.v_rest+(self.v_mem-self.v_rest)*(-ts/self.tau).exp();
+        println!("valore potenziale senza pesi: {}",self.v_mem);
         if weights.len()==is_active.len(){
-            for i in 0..weights.len{
-                Self.v_mem+=is_active[i]*weights[i];
+            for i in 0..weights.len(){
+                self.v_mem+=( if is_active[i]==true {1.0} else {0.0} )*weights[i];
             }
+            println!("valore potenziale con pesi: {}",self.v_mem);    
         }else{
             panic!("wrong dimensions for weights and is_active")
         }
 
 
-        if Self.v_mem >= Self.v_th{ //spiking
-            Self.v_mem=Self.v_reset;
-            true //output impulse
+        if self.v_mem >= self.v_th{ //spiking
+            self.v_mem=self.v_reset;
+            return true; //output impulse
         }
         false //threshold not reached
 
