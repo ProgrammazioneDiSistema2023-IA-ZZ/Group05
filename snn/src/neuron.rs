@@ -39,6 +39,28 @@ impl Neuron{
             //output:false
         }
     }
+
+    //to call periodically with a sampling time that grows for every impulse not received
+    pub fn update(&mut Self, weights: Vec<f64>, is_active: Vec<bool>, ts: f64)->bool{
+
+        //using LIF: v_mem(ts)= v_rest+[v_mem(ts-1)-v_rest]*e^((ts-ts-1)/tau)  +SUM(0->N){si*wi}
+        Self.v_mem=Self.v_rest+(Self.v_mem-Self.v_rest)*exp(ts/Self.tau);
+        if weights.len()==is_active.len(){
+            for i in 0..weights.len{
+                Self.v_mem+=is_active[i]*weights[i];
+            }
+        }else{
+            panic!("wrong dimensions for weights and is_active")
+        }
+
+
+        if Self.v_mem >= Self.v_th{ //spiking
+            Self.v_mem=Self.v_reset;
+            true //output impulse
+        }
+        false //threshold not reached
+
+    }
 }
 
 impl Synapsis{
