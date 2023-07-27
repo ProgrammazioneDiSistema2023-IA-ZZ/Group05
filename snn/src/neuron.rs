@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 #[derive(Debug)]
 pub struct Neuron{
     v_mem :f64,
@@ -6,6 +6,7 @@ pub struct Neuron{
     v_rest :f64, //configurabile
     v_reset :f64, //configurabile
     tau :f64, //configurabile
+    last_received: Instant,
     //output :bool
 }
 
@@ -17,12 +18,13 @@ pub struct Synapsis{
 
 impl Default for Neuron {
     fn default() -> Self{
-        Neuron{
-            v_mem: -7e-2,
-            v_th: -5.5e-2,
-            v_rest: -7e-2,
-            v_reset: -7e-2,
-            tau: 1e-2,
+        Neuron{ //note: everything is expressed in milli(s/V)!
+            v_mem: -70.0,
+            v_th: -55.0,
+            v_rest: -70.0,
+            v_reset: -70.0,
+            tau: 10.0, 
+            last_received: Instant::now()
             //output:false
         }
     }
@@ -36,15 +38,19 @@ impl Neuron{
             v_rest: v_rest,
             v_reset: v_reset,
             tau: tau,
+            last_received: Instant::now()
             //output:false
         }
     }
 
     //to call periodically with a sampling time that grows for every impulse not received
-    pub fn update(&mut self, weights: Vec<f64>, is_active: Vec<bool>, ts: f64)->bool{
+    pub fn update(&mut self, weights: Vec<f64>, is_active: Vec<bool>)->bool{
 
-        //using LIF: v_mem(ts)= v_rest+[v_mem(ts-1)-v_rest]*e^((ts-ts-1)/tau)  +SUM(0->N){si*wi}
-        self.v_mem=self.v_rest+(self.v_mem-self.v_rest)*(-ts/self.tau).exp();
+        let now= Instant::now();
+        let time_diff= ((now-self.last_received).as_micros() as f64)*1e-3;
+
+        //using LIF: v_mem(ts)= v_rest+[v_mem(ts-1)-v_rest]*e^(-(ts-ts-1)/tau)  +SUM(0->N){si*wi}
+        self.v_mem=self.v_rest+(self.v_mem-self.v_rest)*(-(time_diff)/self.tau).exp();
         println!("valore potenziale senza pesi: {}",self.v_mem);
         if weights.len()==is_active.len(){
             for i in 0..weights.len(){
