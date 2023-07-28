@@ -1,0 +1,87 @@
+{
+    "layers": 2,
+    "neurons": [
+        {
+            "id": 0,
+            "layer": 0
+        },
+        {
+            "id": 1,
+            "layer": 0
+        },
+        {
+            "id": 2,
+            "layer": 0
+        },
+        {
+            "id": 3,
+            "layer": 1
+        },
+        {
+            "id": 4,
+            "layer": 1
+        }
+    ],
+    "edges": [
+        {
+            "source_id": 0,
+            "dest_id": 3,
+            "weight": 1.2
+        },
+        {
+            "source_id": 0,
+            "dest_id": 4,
+            "weight": 0.8
+        },
+        {
+            "source_id": 1,
+            "dest_id": 3,
+            "weight": 1.3
+        },
+        {
+            "source_id": 1,
+            "dest_id": 4,
+            "weight": 0.3
+        },
+        {
+            "source_id": 2,
+            "dest_id": 3,
+            "weight": 1.5
+        },
+        {
+            "source_id": 2,
+            "dest_id": 4,
+            "weight": 0.1
+        },
+        {
+            "source_id": 0,
+            "dest_id": 1,
+            "weight": -0.3
+        },
+        {
+            "source_id": 0,
+            "dest_id": 2,
+            "weight": -0.3
+        },
+        {
+            "source_id": 1,
+            "dest_id": 0,
+            "weight": -0.3
+        },
+        {
+            "source_id": 1,
+            "dest_id": 2,
+            "weight": -0.3
+        },
+        {
+            "source_id": 2,
+            "dest_id": 0,
+            "weight": -0.3
+        },
+        {
+            "source_id": 2,
+            "dest_id": 1,
+            "weight": -0.3
+        }
+    ]
+}
