@@ -1,5 +1,5 @@
-use snn::network::Network;
-use snn::neuron::Neuron;
+use snn::network::{neuron::Neuron, Network};
+
 fn main() {
     let mut l0 = Vec::new();
     let mut l1 = Vec::new();
@@ -32,7 +32,7 @@ fn main() {
         vec![true, false, false, false, true, false, false, false, true],
     ];
 
-    let output = network.feed_input(input).unwrap();
+    let output = network.run(input).unwrap();
 
     for row in &output {
         println!("{:?}", row);

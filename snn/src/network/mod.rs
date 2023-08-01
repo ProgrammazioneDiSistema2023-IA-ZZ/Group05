@@ -1,14 +1,24 @@
-use crate::neuron::{Message, Neuron};
+use crate::network::neuron::{Message, Neuron};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 
+pub mod neuron;
+
+/** The struct Network represents a Spiking Neural Network.
+All the Neurons inside the network belong to a layer and
+each layer collects its own Neurons inside a Vec. The set
+of all Vec representing layers is then collected inside an
+outer Vec.
+
+The Network evolves temporally in discrete time steps, whose
+length can be set at network creation (expressed in microseconds). */
 pub struct Network {
-    pub time_step_duration_us: f64, // time delta between samples (us)
-    pub layers: Vec<Vec<Neuron>>,
+    pub time_step_duration_us: f64, /* Time step duration*/
+    pub layers: Vec<Vec<Neuron>>,   /* Vec collecting layers (other Vecs) */
 }
 
 impl Network {
-    /// creates a new network
+    /** Create a network */
     pub fn new(time_step_duration_us: f64) -> Self {
         Network {
             time_step_duration_us,
@@ -16,11 +26,50 @@ impl Network {
         }
     }
 
-    pub fn feed_input(&mut self, input: Vec<Vec<bool>>) -> Result<Vec<Vec<bool>>, ()> {
-        /*Number of input nodes (i.e. nr. of rows of the input matrix) */
+    /** Add a layer to the network */
+    pub fn add_layer(&mut self, layer: Vec<Neuron>) {
+        self.layers.push(layer);
+    }
+
+    /** Get output nodes number */
+    pub fn get_outputs_number(&self) -> Result<usize, ()> {
+        if self.layers.len() == 0 {
+            return Err(());
+        }
+        return Ok(self.layers.last().unwrap().len());
+    }
+
+    pub fn create_output_matrix(&self, time_steps: usize) -> Vec<Vec<bool>> {
+        let mut output = Vec::<Vec<bool>>::new();
+        for _ in 0..self.get_outputs_number().unwrap() {
+            output.push(vec![false; time_steps]);
+        }
+        output
+    }
+
+    pub fn write_results(rx: Receiver<Message>, output: &mut Vec<Vec<bool>>) {
+        let mut step = 0;
+
+        while let Ok(message) = rx.recv() {
+            match message {
+                Message::GoAhead => {
+                    step += 1;
+                }
+                Message::Pulse(source) => {
+                    output[source][step] = true;
+                }
+            }
+        }
+    }
+
+    /** Run the network using the provided input */
+    pub fn run(&mut self, input: Vec<Vec<bool>>) -> Result<Vec<Vec<bool>>, ()> {
+        /*Number of input nodes ( = nr. rows of the input matrix) */
         let n_input_nodes = input.len();
-        /*Number of time slots (i.e. nr. of columns of the input matrix) */
+
+        /*Number of time slots ( =  nr. of columns of the input matrix) */
         let n_time_steps = input[0].len();
+
         /*Number of layers in the network ( = number of threads to be spawn) */
         let n_network_layers = self.layers.len();
 
@@ -28,28 +77,19 @@ impl Network {
         let mut thread_handles = Vec::<JoinHandle<()>>::new();
 
         /*Channels to be used to receive pulses from previous layer and to send
-        pulses to the following layer */
+        pulses to the following layer. Input and Output names refer to the relative
+        'position' of the channel to the current layer: [input] --> {layer} --> [output]  */
         let (input_tx, mut input_rx) = mpsc::channel();
         let (mut output_tx, mut output_rx) = mpsc::channel();
 
-        /*Number of output nodes */
-        let n_output_nodes = self.layers.last().unwrap().len();
-
         /*Output matrix initialization */
-        let mut output: Vec<Vec<bool>> = Vec::new();
-        for _ in 0..n_output_nodes {
-            let mut v = Vec::<bool>::new();
-            for _ in 0..n_time_steps {
-                v.push(false);
-            }
-            output.push(v);
-        }
+        let mut output = self.create_output_matrix(n_time_steps);
 
-        /*Injecting input inside the network (sent to first layer). All inputs
+        /*Injecting input inside the network (to first layer). All inputs
         for a single time slot are sent, first. Input belonging to different
         time slots are separated by the means of a Message::GoAhead, that signals
         that, for the current time slot, no more input spikes must be provided and so
-        the listening layer can start its computations*/
+        the listening layer can start its computation*/
         for step in 0..n_time_steps {
             for input_node in 0..n_input_nodes {
                 if input[input_node][step] {
@@ -61,7 +101,7 @@ impl Network {
 
         /*Starting a thread for each layer */
         for layer in 0..n_network_layers {
-            /*Each thread is given possession of a clone of its neurons vector*/
+            /*Each thread is given possession of a clone of its own neurons vector*/
             let layer_neurons = self.layers[layer].clone();
             /*Time step duration (ms) */
             let time_step_duration = self.time_step_duration_us / 1000.0;
@@ -134,9 +174,11 @@ impl Network {
             thread_handles.push(h);
 
             /*The receiver part of the output channel becomes the input receiver
-            part for the next layer */
+            part for the next layer. If last layer has just been started, then
+            input_rx can be used to read results */
             input_rx = output_rx;
 
+            /*No need to create next output channel if last layer has been started*/
             if layer == n_network_layers - 1 {
                 break;
             }
@@ -145,20 +187,11 @@ impl Network {
             (output_tx, output_rx) = mpsc::channel();
         }
 
+        /*Waiting for all threads to finish */
         thread_handles.into_iter().for_each(|h| h.join().unwrap());
 
-        let mut step = 0;
-
-        while let Ok(message) = input_rx.recv() {
-            match message {
-                Message::GoAhead => {
-                    step += 1;
-                }
-                Message::Pulse(source) => {
-                    output[source][step] = true;
-                }
-            }
-        }
+        /*Writing results to output matrix*/
+        Self::write_results(input_rx, &mut output);
 
         return Ok(output);
     }
