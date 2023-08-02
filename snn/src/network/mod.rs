@@ -2,6 +2,7 @@ use crate::network::neuron::{Message, Neuron};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 
+pub mod json;
 pub mod neuron;
 
 /** The struct Network represents a Spiking Neural Network.
