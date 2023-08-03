@@ -1,11 +1,17 @@
 use rand::distributions::Uniform;
 use rand::Rng;
 use snn::network::json::{LayerData, NetworkData, NeuronData};
+use std::{
+    fs::{self, File},
+    path::Path,
+};
 fn main() {
     let (nr_inputs, nr_outputs) = (6, 3);
+    let time_step_duration_us = 100.0;
 
     /*network data struct */
     let mut nd = NetworkData {
+        time_step_duration_us,
         nr_inputs,
         nr_outputs,
         layers: Vec::new(),
@@ -15,6 +21,12 @@ fn main() {
     let mut layer1: Vec<NeuronData> = vec![];
     let mut layer2: Vec<NeuronData> = vec![];
     let mut layer3: Vec<NeuronData> = vec![];
+
+    /*Default electric parameters*/
+    let v_th = -55.0;
+    let v_rest = -70.0;
+    let v_reset = -70.0;
+    let tau = 10.0;
 
     /*Random number generator for inter-layer weights (positive)*/
     let mut rng = rand::thread_rng();
@@ -35,13 +47,17 @@ fn main() {
         for _ in 0..nr_inputs {
             weights.push(rng.sample(distr));
         }
-        let mut int_weights: Vec<f64> = vec![];
+        let mut internal_weights: Vec<f64> = vec![];
         for _ in 0..nr_neurons_l1 - 1 {
-            int_weights.push(rng2.sample(distr2));
+            internal_weights.push(rng2.sample(distr2));
         }
         layer1.push(NeuronData {
-            weights: weights,
-            internal_weights: int_weights,
+            weights,
+            internal_weights,
+            v_th,
+            v_rest,
+            v_reset,
+            tau,
         });
     }
 
@@ -52,13 +68,17 @@ fn main() {
         for _ in 0..nr_neurons_l1 {
             weights.push(rng.sample(distr));
         }
-        let mut int_weights: Vec<f64> = vec![];
+        let mut internal_weights: Vec<f64> = vec![];
         for _ in 0..nr_neurons_l2 - 1 {
-            int_weights.push(rng2.sample(distr2));
+            internal_weights.push(rng2.sample(distr2));
         }
         layer2.push(NeuronData {
-            weights: weights,
-            internal_weights: int_weights,
+            weights,
+            internal_weights,
+            v_th,
+            v_rest,
+            v_reset,
+            tau,
         });
     }
 
@@ -69,13 +89,17 @@ fn main() {
         for _ in 0..nr_neurons_l2 {
             weights.push(rng.sample(distr));
         }
-        let mut int_weights: Vec<f64> = vec![];
+        let mut internal_weights: Vec<f64> = vec![];
         for _ in 0..nr_neurons_l3 - 1 {
-            int_weights.push(rng2.sample(distr2));
+            internal_weights.push(rng2.sample(distr2));
         }
         layer3.push(NeuronData {
-            weights: weights,
-            internal_weights: int_weights,
+            weights,
+            internal_weights,
+            v_th,
+            v_rest,
+            v_reset,
+            tau,
         });
     }
 
@@ -88,5 +112,9 @@ fn main() {
 
     let serialized = serde_json::to_string(&nd).unwrap();
 
-    println!("{}", serialized);
+    let _ = fs::write(
+        Path::new(r#"C:\Users\antoc\Desktop\Group05\snn\src\snn_data.json"#),
+        serialized,
+    )
+    .unwrap();
 }

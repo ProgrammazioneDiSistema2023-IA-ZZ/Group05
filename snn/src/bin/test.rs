@@ -21,6 +21,8 @@ fn main() {
     layers.push(l1);
 
     let mut network = Network {
+        nr_inputs: 4,
+        nr_outputs: 3,
         time_step_duration_us: 100.0,
         layers,
     };

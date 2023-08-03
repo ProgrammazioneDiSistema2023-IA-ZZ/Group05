@@ -18,6 +18,7 @@ pub struct Neuron {
     pub v_mem: f64, // (mV) membrane potential after receiving last pulse
     pub last_received_pulse_step: usize, // discrete time step when last pulse was received
     pub weights: Vec<f64>, // weights of each synapse going from the 'i'th neuron of the previous layer to this neuron
+    pub internal_weights: Vec<f64>, //weights of synapses internal to layer
 }
 
 impl Default for Neuron {
@@ -31,6 +32,7 @@ impl Default for Neuron {
             v_mem: -70.0,
             last_received_pulse_step: 0,
             weights: Vec::new(),
+            internal_weights: Vec::new(),
         }
     }
 }
@@ -46,7 +48,18 @@ impl Neuron {
             v_mem: v_rest,
             last_received_pulse_step: 0,
             weights: Vec::new(),
+            internal_weights: Vec::new(),
         }
+    }
+
+    /** Set weights for synapses external to layer */
+    pub fn set_weights(&mut self, weights: Vec<f64>) {
+        self.weights = weights;
+    }
+
+    /** Set weights for synapses internal to layer */
+    pub fn set_internal_weights(&mut self, internal_weights: Vec<f64>) {
+        self.internal_weights = internal_weights;
     }
 }
 

@@ -14,14 +14,18 @@ outer Vec.
 The Network evolves temporally in discrete time steps, whose
 length can be set at network creation (expressed in microseconds). */
 pub struct Network {
+    pub nr_inputs: usize,
+    pub nr_outputs: usize,
     pub time_step_duration_us: f64, /* Time step duration*/
     pub layers: Vec<Vec<Neuron>>,   /* Vec collecting layers (other Vecs) */
 }
 
 impl Network {
     /** Create a network */
-    pub fn new(time_step_duration_us: f64) -> Self {
+    pub fn new(time_step_duration_us: f64, nr_inputs: usize, nr_outputs: usize) -> Self {
         Network {
+            nr_inputs,
+            nr_outputs,
             time_step_duration_us,
             layers: Vec::new(),
         }
@@ -108,75 +112,89 @@ impl Network {
             let time_step_duration = self.time_step_duration_us / 1000.0;
 
             /*Spawning each thread */
-            let h = thread::spawn(move || {
-                /*Getting the input and output channels */
-                let rx_i: Receiver<Message> = input_rx;
-                let tx_o: Sender<Message> = output_tx;
+            let h = thread::Builder::new()
+                .name(format!("layer {}", layer))
+                .spawn(move || {
+                    /*Getting the input and output channels */
+                    let rx_i: Receiver<Message> = input_rx;
+                    let tx_o: Sender<Message> = output_tx;
 
-                /*Neurons vector */
-                let mut neurons = layer_neurons;
+                    /*Neurons vector */
+                    let mut neurons = layer_neurons;
 
-                /*For each time step */
-                for step in 0..n_time_steps {
-                    /*Vector to trace the origin of pulses, needed since each synapse
-                    has a different weight. */
-                    let mut pulse_sources = Vec::new();
+                    /*For each time step */
+                    for step in 0..n_time_steps {
+                        /*Vector to trace the origin of pulses, needed since each synapse
+                        has a different weight. */
+                        let mut pulse_sources = Vec::new();
 
-                    /*Reading messages from the channel until a Message::GoAhead is received */
-                    while let Message::Pulse(source) = rx_i.recv().unwrap() {
-                        pulse_sources.push(source);
+                        while let Ok(message) = rx_i.recv() {
+                            if let Message::Pulse(source) = message {
+                                pulse_sources.push(source);
+                            } else {
+                                break;
+                            }
+                        }
+
+                        /*Ended reading all pulses for current time step */
+
+                        let neurons_of_layer = neurons.len();
+
+                        /*Updating neurons state */
+                        for i in 0..neurons_of_layer {
+                            let mut neuron = &mut neurons[i];
+
+                            /*Sum of all v_mem 'jumps' caused by pulses*/
+                            let mut pulse_contribution = 0.0;
+
+                            //println!("layer: {}, neuron: {}, step: {}", layer, i, step);
+                            for source in &pulse_sources {
+                                pulse_contribution += neuron.weights[*source];
+                            }
+
+                            /*Membrane potential is updated only if the neuron has
+                            received at least a pulse */
+                            //if pulse_sources.len() > 0 {
+                            /*Update potential */
+                            neuron.v_mem = neuron.v_rest
+                                + (neuron.v_mem - neuron.v_rest)
+                                    * (((neuron.last_received_pulse_step as f64 - step as f64)
+                                        * time_step_duration
+                                        / neuron.tau)
+                                        .exp())
+                                + pulse_contribution;
+                            /*Update last_received_pulse_step */
+                            neuron.last_received_pulse_step = step;
+
+                            /* If v_mem exceeds threshold */
+                            if neuron.v_mem > neuron.v_th {
+                                /* Generate spikes as output */
+                                tx_o.send(Message::Pulse(i as usize)).unwrap();
+                                /* Reset v_mem */
+                                neuron.v_mem = neuron.v_reset;
+                                /* Decrease v_mem for neurons of same layer*/
+                                let mut ind = 0;
+                                for j in 0..neurons_of_layer {
+                                    if j != i {
+                                        neurons[j].v_mem += neurons[i].internal_weights[ind];
+                                        ind += 1;
+                                    }
+                                }
+                            }
+                        }
+
+                        /*time step elaboration complete: all pulses sent */
+                        tx_o.send(Message::GoAhead).unwrap();
                     }
-
-                    /*Ended reading all pulses for current time step */
-
-                    /*Updating neurons state */
-                    for i in 0..neurons.len() {
-                        let mut neuron = &mut neurons[i];
-
-                        /*Sum of all v_mem 'jumps' caused by pulses*/
-                        let mut pulse_contribution = 0.0;
-
-                        for source in &pulse_sources {
-                            pulse_contribution += neuron.weights[*source];
-                        }
-
-                        /*Membrane potential is updated only if the neuron has
-                        received at least a pulse */
-                        //if pulse_sources.len() > 0 {
-                        /*Update potential */
-                        neuron.v_mem = neuron.v_rest
-                            + (neuron.v_mem - neuron.v_rest)
-                                * (((neuron.last_received_pulse_step as f64 - step as f64)
-                                    * time_step_duration
-                                    / neuron.tau)
-                                    .exp())
-                            + pulse_contribution;
-                        /*Update last_received_pulse_step */
-                        neuron.last_received_pulse_step = step;
-
-                        if layer == n_network_layers - 1 && i == 0 {
-                            println!("step: {}, v_mem = {}", step, neuron.v_mem);
-                        }
-                        //}
-
-                        /*Output spikes generation */
-                        if neuron.v_mem > neuron.v_th {
-                            tx_o.send(Message::Pulse(i as usize)).unwrap();
-                            neuron.v_mem = neuron.v_reset;
-                        }
-                    }
-
-                    /*time step elaboration complete: all pulses sent */
-                    tx_o.send(Message::GoAhead).unwrap();
-                }
-            });
+                });
 
             /*Pushing thread handle to handles vector */
-            thread_handles.push(h);
+            thread_handles.push(h.unwrap());
 
             /*The receiver part of the output channel becomes the input receiver
             part for the next layer. If last layer has just been started, then
             input_rx can be used to read results */
+
             input_rx = output_rx;
 
             /*No need to create next output channel if last layer has been started*/
@@ -189,7 +207,9 @@ impl Network {
         }
 
         /*Waiting for all threads to finish */
-        thread_handles.into_iter().for_each(|h| h.join().unwrap());
+        thread_handles.into_iter().for_each(|h| {
+            h.join().unwrap();
+        });
 
         /*Writing results to output matrix*/
         Self::write_results(input_rx, &mut output);
