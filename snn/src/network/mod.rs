@@ -43,7 +43,7 @@ impl Network {
         }
         return Ok(self.layers.last().unwrap().len());
     }
-
+    /** Matrix of output_neurons x time_steps */
     pub fn create_output_matrix(&self, time_steps: usize) -> Vec<Vec<bool>> {
         let mut output = Vec::<Vec<bool>>::new();
         for _ in 0..self.get_outputs_number().unwrap() {
@@ -52,6 +52,8 @@ impl Network {
         output
     }
 
+    /** Referring to a channel between two layers, listen up to any message.
+     * If an impulse arrives, make note; go on with the next time step only if a message GoAhead arrives.*/
     pub fn write_results(rx: Receiver<Message>, output: &mut Vec<Vec<bool>>) {
         let mut step = 0;
 
@@ -67,11 +69,11 @@ impl Network {
         }
     }
 
-    /** Run the network using the provided input */
+    /** Run the network using the provided input(Matrix with input_neurons x time_steps) */
     pub fn run(&mut self, input: Vec<Vec<bool>>) -> Result<Vec<Vec<bool>>, ()> {
+       
         /*Number of input nodes ( = nr. rows of the input matrix) */
         let n_input_nodes = input.len();
-
         /*Number of time slots ( =  nr. of columns of the input matrix) */
         let n_time_steps = input[0].len();
 
@@ -104,6 +106,7 @@ impl Network {
             input_tx.send(Message::GoAhead).unwrap();
         }
 
+        
         /*Starting a thread for each layer */
         for layer in 0..n_network_layers {
             /*Each thread is given possession of a clone of its own neurons vector*/
