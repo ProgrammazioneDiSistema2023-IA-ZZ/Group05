@@ -69,6 +69,6 @@ impl Neuron {
 pub enum Message {
     // a pulse keeps the index of the Neuron which produced it
     Pulse(usize),
-    // notify the following layer that all pulses have been delivered for that time step
+    // notify the following layer that all pulses have been delivered for that time step -> go on!
     GoAhead,
 }

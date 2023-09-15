@@ -2,7 +2,7 @@ use snn::network;
 
 fn main() {
     let mut network = network::json::load_from_file(
-        "C:\\Users\\antoc\\Desktop\\Group05\\snn\\src\\snn_data.json",
+        "src\\snn_data.json",
     );
     let input = vec![
         vec![true, false, true, false, false],

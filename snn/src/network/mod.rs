@@ -122,11 +122,15 @@ impl Network {
                     let rx_i: Receiver<Message> = input_rx;
                     let tx_o: Sender<Message> = output_tx;
 
-                    /*Neurons vector */
+                    /*Neurons vector name change*/
                     let mut neurons = layer_neurons;
+                    /*Vector used for modeling internal pulses */
+                    let mut internal_impulses:Vec<usize>= Vec::new();
+                    let mut internal_impulses_next:Vec<usize>=Vec::new();
 
                     /*For each time step */
                     for step in 0..n_time_steps {
+
                         /*Vector to trace the origin of pulses, needed since each synapse
                         has a different weight. */
                         let mut pulse_sources = Vec::new();
@@ -141,24 +145,27 @@ impl Network {
 
                         /*Ended reading all pulses for current time step */
 
-                        let neurons_of_layer = neurons.len();
-
                         /*Updating neurons state */
+                        let neurons_of_layer = neurons.len();
                         for i in 0..neurons_of_layer {
                             let mut neuron = &mut neurons[i];
 
-                            /*Sum of all v_mem 'jumps' caused by pulses*/
+                            /*Sum of all v_mem 'jumps' caused by weighted pulses*/
                             let mut pulse_contribution = 0.0;
 
                             //println!("layer: {}, neuron: {}, step: {}", layer, i, step);
                             for source in &pulse_sources {
                                 pulse_contribution += neuron.weights[*source];
                             }
+                            for source in &internal_impulses{
+                                /*take note of internal impulses of the other neuorons of the layer */
+                                if *source!=i{ pulse_contribution+= neuron.internal_weights[*source]};
+                            }
 
                             /*Membrane potential is updated only if the neuron has
                             received at least a pulse */
                             //if pulse_sources.len() > 0 {
-                            /*Update potential */
+                            /*Update potential using LIF*/
                             neuron.v_mem = neuron.v_rest
                                 + (neuron.v_mem - neuron.v_rest)
                                     * (((neuron.last_received_pulse_step as f64 - step as f64)
@@ -173,21 +180,24 @@ impl Network {
                             if neuron.v_mem > neuron.v_th {
                                 /* Generate spikes as output */
                                 tx_o.send(Message::Pulse(i as usize)).unwrap();
+                                internal_impulses_next.push(i as usize);
                                 /* Reset v_mem */
                                 neuron.v_mem = neuron.v_reset;
                                 /* Decrease v_mem for neurons of same layer*/
-                                let mut ind = 0;
+                                /*let mut ind = 0;
                                 for j in 0..neurons_of_layer {
                                     if j != i {
                                         neurons[j].v_mem += neurons[i].internal_weights[ind];
                                         ind += 1;
                                     }
-                                }
+                                }*/
                             }
                         }
 
-                        /*time step elaboration complete: all pulses sent */
-                        tx_o.send(Message::GoAhead).unwrap();
+                    /*time step elaboration complete: all pulses sent */
+                    tx_o.send(Message::GoAhead).unwrap();
+                    internal_impulses=internal_impulses_next.clone();
+                    internal_impulses_next.clear();
                     }
                 });
 
@@ -197,7 +207,6 @@ impl Network {
             /*The receiver part of the output channel becomes the input receiver
             part for the next layer. If last layer has just been started, then
             input_rx can be used to read results */
-
             input_rx = output_rx;
 
             /*No need to create next output channel if last layer has been started*/
@@ -207,7 +216,7 @@ impl Network {
 
             /*A new output channel must be created for the next layer (and thread) */
             (output_tx, output_rx) = mpsc::channel();
-        }
+        }//end of layer 
 
         /*Waiting for all threads to finish */
         thread_handles.into_iter().for_each(|h| {
