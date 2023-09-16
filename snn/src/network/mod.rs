@@ -124,7 +124,7 @@ impl Network {
 
                     /*Neurons vector name change*/
                     let mut neurons = layer_neurons;
-                    /*Vector used for modeling internal pulses */
+                    /*Vectors used for modeling internal pulses */
                     let mut internal_impulses:Vec<usize>= Vec::new();
                     let mut internal_impulses_next:Vec<usize>=Vec::new();
 
@@ -134,7 +134,6 @@ impl Network {
                         /*Vector to trace the origin of pulses, needed since each synapse
                         has a different weight. */
                         let mut pulse_sources = Vec::new();
-
                         while let Ok(message) = rx_i.recv() {
                             if let Message::Pulse(source) = message {
                                 pulse_sources.push(source);
@@ -164,7 +163,7 @@ impl Network {
 
                             /*Membrane potential is updated only if the neuron has
                             received at least a pulse */
-                            //if pulse_sources.len() > 0 {
+                            if pulse_contribution!=0.0 {   //CONSIDERIAMO ANCHE QUELLO INTERNO? pulse_sources.len() > 0
                             /*Update potential using LIF*/
                             neuron.v_mem = neuron.v_rest
                                 + (neuron.v_mem - neuron.v_rest)
@@ -191,6 +190,7 @@ impl Network {
                                         ind += 1;
                                     }
                                 }*/
+                            }
                             }
                         }
 

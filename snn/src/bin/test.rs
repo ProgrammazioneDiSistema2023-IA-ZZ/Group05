@@ -7,12 +7,14 @@ fn main() {
     for _ in 0..4 {
         let mut neuron = Neuron::default();
         neuron.weights.append(&mut vec![4.0, 4.0, 4.0, 4.0]);
+        neuron.internal_weights.append(&mut vec![-1.0, -2.0,-1.0,-2.0]);//note: a neuron does not communicate with itself!
         l0.push(neuron);
     }
 
     for _ in 0..3 {
         let mut neuron = Neuron::default();
         neuron.weights.append(&mut vec![3.5, 3.5, 3.5, 3.5]);
+        neuron.internal_weights.append(&mut vec![-1.0, -2.0,-1.0,-2.0]);
         l1.push(neuron);
     }
 
