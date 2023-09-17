@@ -55,6 +55,13 @@ impl Register {
         self.damage = damage;
     }
 
+    /// write the provided value to the register.
+    /// 'Damages', if present, are applied each time ONLY to the returned copy of the
+    /// value when performing a reading, so, leaving the original unchanged
+    pub fn write_value(&mut self, value: f64) {
+        self.value = value;
+    }
+
     /// read and return the value contained inside the register: damages inside
     /// the register are automatically applied, if present.
     /// current_time_step can be set to None unless TransientBitFlip is
