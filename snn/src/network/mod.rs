@@ -1,27 +1,27 @@
 use crate::network::neuron::{Message, Neuron};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver};
 use std::thread::{self, JoinHandle};
 
 pub mod json;
 pub mod neuron;
 
-/** The struct Network represents a Spiking Neural Network.
-All the Neurons inside the network belong to a layer and
-each layer collects its own Neurons inside a Vec. The set
-of all Vec representing layers is then collected inside an
-outer Vec.
-
-The Network evolves temporally in discrete time steps, whose
-length can be set at network creation (expressed in microseconds). */
+/// The struct Network represents a Spiking Neural Network.
+/// All the Neurons inside the network belong to a layer and
+/// each layer collects its own Neurons inside a Vec. The set
+/// of all Vec representing layers is then collected inside an
+/// outer Vec.
+///
+/// The Network evolves temporally in discrete time steps, whose
+/// length can be set at network creation (expressed in microseconds).
 pub struct Network {
     pub nr_inputs: usize,
     pub nr_outputs: usize,
-    pub time_step_duration_us: f64, /* Time step duration*/
-    pub layers: Vec<Vec<Neuron>>,   /* Vec collecting layers (other Vecs) */
+    pub time_step_duration_us: f64, // Time step duration
+    pub layers: Vec<Vec<Neuron>>,   // Vec collecting layers (other Vecs)
 }
 
 impl Network {
-    /** Create a network */
+    /// Create a network
     pub fn new(time_step_duration_us: f64, nr_inputs: usize, nr_outputs: usize) -> Self {
         Network {
             nr_inputs,
@@ -31,19 +31,19 @@ impl Network {
         }
     }
 
-    /** Add a layer to the network */
+    /// Add a layer to the network
     pub fn add_layer(&mut self, layer: Vec<Neuron>) {
         self.layers.push(layer);
     }
 
-    /** Get output nodes number */
+    /// Get output nodes number
     pub fn get_outputs_number(&self) -> Result<usize, ()> {
         if self.layers.len() == 0 {
             return Err(());
         }
         return Ok(self.layers.last().unwrap().len());
     }
-    /** Matrix of output_neurons x time_steps */
+    /// Matrix of output_neurons x time_steps
     pub fn create_output_matrix(&self, time_steps: usize) -> Vec<Vec<bool>> {
         let mut output = Vec::<Vec<bool>>::new();
         for _ in 0..self.get_outputs_number().unwrap() {
@@ -52,170 +52,209 @@ impl Network {
         output
     }
 
-    /** Referring to a channel between two layers, listen up to any message.
-     * If an impulse arrives, make note; go on with the next time step only if a message GoAhead arrives.*/
+    /// Read all pulses produced by the last layer of the SNN from the receiver side of
+    /// its output channel and write the result of the SNN computation inside the 'output'
+    /// boolean matrix, having dimension (nr. output neurons) x (nr. time steps).
+    /// Each row corresponds to a particular output neuron, by index, while each column
+    /// correponds to a certain time step. If output[i][j] == true, it means that, at time
+    /// step 'j', the output neuron 'i' produced a pulse (false means no pulse, instead).
     pub fn write_results(rx: Receiver<Message>, output: &mut Vec<Vec<bool>>) {
-        let mut step = 0;
+        let mut time_step = 0;
 
+        // read all Messages from the receiver side of the output channel
         while let Ok(message) = rx.recv() {
             match message {
+                // if the message is GoAhead, that means that all the pulses for the current
+                // time step have been read, and so time step can be incremented (i.e. it is
+                // possible to start filling the following column in the output matrix)
                 Message::GoAhead => {
-                    step += 1;
+                    time_step += 1;
                 }
-                Message::Pulse(source) => {
-                    output[source][step] = true;
+                // if the message is a Pulse, then it contains the index of the neuron
+                // of the previous layer which produced the pulse itself, which also matches
+                // the index of the row in the output matrix to fill
+                Message::Pulse(source_index) => {
+                    output[source_index][time_step] = true;
                 }
             }
         }
     }
 
-    /** Run the network using the provided input(Matrix with input_neurons x time_steps) */
-    pub fn run(&mut self, input: Vec<Vec<bool>>) -> Result<Vec<Vec<bool>>, ()> {
-       
-        /*Number of input nodes ( = nr. rows of the input matrix) */
-        let n_input_nodes = input.len();
-        /*Number of time slots ( =  nr. of columns of the input matrix) */
-        let n_time_steps = input[0].len();
-
-        /*Number of layers in the network ( = number of threads to be spawn) */
-        let n_network_layers = self.layers.len();
-
-        /*Vector to contain handles to wait threads termination */
-        let mut thread_handles = Vec::<JoinHandle<()>>::new();
-
-        /*Channels to be used to receive pulses from previous layer and to send
-        pulses to the following layer. Input and Output names refer to the relative
-        'position' of the channel to the current layer: [input] --> {layer} --> [output]  */
-        let (input_tx, mut input_rx) = mpsc::channel();
-        let (mut output_tx, mut output_rx) = mpsc::channel();
-
-        /*Output matrix initialization */
-        let mut output = self.create_output_matrix(n_time_steps);
-
-        /*Injecting input inside the network (to first layer). All inputs
-        for a single time slot are sent, first. Input belonging to different
-        time slots are separated by the means of a Message::GoAhead, that signals
-        that, for the current time slot, no more input spikes must be provided and so
-        the listening layer can start its computation*/
-        for step in 0..n_time_steps {
-            for input_node in 0..n_input_nodes {
-                if input[input_node][step] {
-                    let _ = input_tx.send(Message::Pulse(input_node)).unwrap();
-                }
+    /// checks if the input provided to the SNN is valid, i.e. if all the rows in the matrix
+    /// have the same length (the matrix is actually a Vec of Vecs of booleans)
+    fn input_matrix_is_valid(input: &Vec<Vec<bool>>) -> bool {
+        let len = input[0].len();
+        for v in input {
+            if v.len() != len {
+                return false;
             }
-            input_tx.send(Message::GoAhead).unwrap();
         }
 
-        
-        /*Starting a thread for each layer */
-        for layer in 0..n_network_layers {
-            /*Each thread is given possession of a clone of its own neurons vector*/
-            let layer_neurons = self.layers[layer].clone();
-            /*Time step duration (ms) */
-            let time_step_duration = self.time_step_duration_us / 1000.0;
+        return true;
+    }
 
-            /*Spawning each thread */
-            let h = thread::Builder::new()
-                .name(format!("layer {}", layer))
+    /// Simulate the network using the provided input, which is a boolean matrix having
+    /// dimension (nr. input neurons) x (nr. time steps). Each row corresponds to a particular
+    /// entrance of the SNN, and each column corresponds to a certain time step.
+    /// If input[i][j] == true, it means that, at time step 'j', the SNN receives a pulse on
+    /// the entrance 'i'. Otherwise, if it false, no input is received for that time step.
+    pub fn run(&self, input: Vec<Vec<bool>>) -> Result<Vec<Vec<bool>>, ()> {
+        // Check if all rows in the matrix have the same length. If not, the input
+        // is invalid and Err is returned
+        if !Self::input_matrix_is_valid(&input) {
+            return Err(());
+        }
+
+        // Number of entrances of SNN, equal to the number of rows of the 'input' matrix
+        let snn_inputs_number = input.len();
+
+        // Number of time steps to simulate in the SNN, equal to the number of columns
+        // of the 'input' matrix
+        let snn_time_steps_number = input[0].len();
+
+        //Time step duration converted to milliseconds to perform computation later
+        let time_step_duration_ms = self.time_step_duration_us / 1000.0;
+
+        // Each layer of the SNN is run in a separated thread. Different layers are able to
+        // communicate, i.e. exchange Pulses or Control Messages, using channels; each layer
+        // has access to:
+        // - the receiver side of a channel to read messages from previous layer
+        // - the sender side of another channel to send messages to the following layer
+        //
+        // Example:
+        // {input} [tx_0]--->[rx_0] {layer 0} [tx_1]--->[rx_1] {layer 1} [tx_2]--->[rx_2] ...
+        //
+        // Usage of each channel side:
+        // - input_injection_sender: it is used only once, to transfer the Pulses contained
+        //      in the input matrix to layer 0 of the SNN, ordered by time step (all
+        //      pulses sent for a certain time step are followed by a Control Message - GoAhead-
+        //      used to signal that there are no more Pulses for that time step, so that the
+        //      listener can stop waiting for messages on the channel and start its computation
+        //      before starting waiting for Pulses belonging to the next time step).
+        // - receiver_from_previous_layer: it represents the channel side used by each layer
+        //      to receive Messages from the previous layer. Once the thread for a specific
+        //      layer is spawned, this variable is updated with the content of
+        //      'future_receiver_from_previous_layer' and fed again to the next thread.
+        // - sender_to_following_layer: it is used by a layer to send Messages to the following
+        //      layer. Once the thread is spawned, this variable is updated with the sender side of
+        //      a newly created channel
+        // - future_receiver_from_previous_layer: it represents the receiver coupled with the
+        //      sender used to transfer messages to the following layer, so, once the thread is
+        //      spwaned, this receiver must be assigned to the variable 'receiver_from_previous_layer',
+        //      so that it becomes the input channel for the next layer. Then its content is updated with
+        //      the receiver of a newly created channel
+
+        let (input_injection_sender, mut receiver_from_previous_layer) = mpsc::channel();
+        let (mut sender_to_following_layer, mut future_receiver_from_previous_layer) =
+            mpsc::channel();
+
+        // Injecting Pulses from input matrix to layer 0, ordered by time step and separated
+        // by using a GoAhead control message
+        for time_step in 0..snn_time_steps_number {
+            for input_node in 0..snn_inputs_number {
+                if input[input_node][time_step] {
+                    input_injection_sender
+                        .send(Message::Pulse(input_node))
+                        .unwrap();
+                }
+            }
+            input_injection_sender.send(Message::GoAhead).unwrap();
+        }
+
+        // Create a Vec to hold thread handles
+        let mut thread_handles = Vec::<JoinHandle<()>>::new();
+
+        // Spawning a thread for each layer
+        for layer_nr in 0..self.layers.len() {
+            // Each thread takes possession of a clone of the Vec containing the Neurons
+            // for the corresponding layer, so that the original Network struct remains
+            // unchanged
+            let mut layer_neurons = self.layers[layer_nr].clone();
+
+            let join_handle = thread::Builder::new()
+                .name(format!("layer {}", layer_nr))
                 .spawn(move || {
-                    /*Getting the input and output channels */
-                    let rx_i: Receiver<Message> = input_rx;
-                    let tx_o: Sender<Message> = output_tx;
-
-                    /*Neurons vector */
-                    let mut neurons = layer_neurons;
-
-                    /*For each time step */
-                    for step in 0..n_time_steps {
-                        /*Vector to trace the origin of pulses, needed since each synapse
-                        has a different weight. */
+                    // each layer operates one time step at a time, in order. In order to perform
+                    // computation for time step 'k', it is necessary that the layer has received all
+                    // Pulses emitted during the SAME time step by the previous layer.
+                    // In other words, layer 'n' can only process time step 'k' data when layer 'n-1'
+                    // has terminated its own computation on the same time step 'k'
+                    for time_step in 0..snn_time_steps_number {
+                        // Vec to keep track of the origin of each Pulse received during the current time step,
+                        // i.e. the index of the neuron belonging to the previous layer - or entrance - which generated
+                        // the Pulse itself); this is needed to allow the Neurons to choose the right Weight when
+                        // computing the new Membrane Potential
                         let mut pulse_sources = Vec::new();
 
-                        while let Ok(message) = rx_i.recv() {
-                            if let Message::Pulse(source) = message {
-                                pulse_sources.push(source);
-                            } else {
-                                break;
-                            }
+                        // Receive all pulses for the current time step
+                        while let Ok(Message::Pulse(source)) = receiver_from_previous_layer.recv() {
+                            pulse_sources.push(source);
                         }
 
-                        /*Ended reading all pulses for current time step */
-
-                        let neurons_of_layer = neurons.len();
-
-                        /*Updating neurons state */
-                        for i in 0..neurons_of_layer {
-                            let mut neuron = &mut neurons[i];
-
-                            /*Sum of all v_mem 'jumps' caused by pulses*/
-                            let mut pulse_contribution = 0.0;
-
-                            //println!("layer: {}, neuron: {}, step: {}", layer, i, step);
-                            for source in &pulse_sources {
-                                pulse_contribution += neuron.weights[*source];
-                            }
-
-                            /*Membrane potential is updated only if the neuron has
-                            received at least a pulse */
-                            //if pulse_sources.len() > 0 {
-                            /*Update potential */
-                            neuron.v_mem = neuron.v_rest
-                                + (neuron.v_mem - neuron.v_rest)
-                                    * (((neuron.last_received_pulse_step as f64 - step as f64)
-                                        * time_step_duration
-                                        / neuron.tau)
-                                        .exp())
-                                + pulse_contribution;
-                            /*Update last_received_pulse_step */
-                            neuron.last_received_pulse_step = step;
-
-                            /* If v_mem exceeds threshold */
-                            if neuron.v_mem > neuron.v_th {
-                                /* Generate spikes as output */
-                                tx_o.send(Message::Pulse(i as usize)).unwrap();
-                                /* Reset v_mem */
-                                neuron.v_mem = neuron.v_reset;
-                                /* Decrease v_mem for neurons of same layer*/
-                                let mut ind = 0;
-                                for j in 0..neurons_of_layer {
-                                    if j != i {
-                                        neurons[j].v_mem += neurons[i].internal_weights[ind];
-                                        ind += 1;
-                                    }
+                        // Update the status for the layer Neurons ONLY if at least a pulse
+                        // is received by the layer, otherwise there is no need to do that.
+                        if pulse_sources.len() > 0 {
+                            // Feed Pulses to all neurons in the layer
+                            for (i, neuron) in layer_neurons.iter_mut().enumerate() {
+                                // if the current neuron 'fires', send a Pulse over the channel
+                                // to the following layer
+                                if neuron.feed_pulses(
+                                    &pulse_sources,
+                                    time_step,
+                                    time_step_duration_ms,
+                                ) {
+                                    sender_to_following_layer.send(Message::Pulse(i)).unwrap();
                                 }
                             }
-                        }
 
-                        /*time step elaboration complete: all pulses sent */
-                        tx_o.send(Message::GoAhead).unwrap();
+                            // Signal to the following layer that all pulses for this time step
+                            // have been sent, by sending a GoAhead Control Message
+                            sender_to_following_layer.send(Message::GoAhead).unwrap();
+                        }
                     }
                 });
 
-            /*Pushing thread handle to handles vector */
-            thread_handles.push(h.unwrap());
+            // Push the join handle inside the Vec
+            thread_handles.push(join_handle.unwrap());
 
-            /*The receiver part of the output channel becomes the input receiver
-            part for the next layer. If last layer has just been started, then
-            input_rx can be used to read results */
+            // prepare the channels for the following thread (layer) to spawn
 
-            input_rx = output_rx;
+            // receiver_from_previous_layer is assigned the receiver coupled with the transmitter
+            // of the previous thread, so that it can be used by the next thread that will be spwaned
+            // to read Messages produced by the previous thread
+            receiver_from_previous_layer = future_receiver_from_previous_layer;
 
-            /*No need to create next output channel if last layer has been started*/
-            if layer == n_network_layers - 1 {
+            // The next thread that will be spawned has been given the receiver side, but it still does
+            // not have a transmitter.
+
+            // If the last thread has already been spawned, there is no next thread, so there is no need
+            // to create another transmitter
+            if layer_nr == self.layers.len() - 1 {
                 break;
             }
 
-            /*A new output channel must be created for the next layer (and thread) */
-            (output_tx, output_rx) = mpsc::channel();
+            // Otherwise, a new channel is created, whose transmitter is given to the next thread
+            (
+                sender_to_following_layer,
+                future_receiver_from_previous_layer,
+            ) = mpsc::channel();
         }
 
-        /*Waiting for all threads to finish */
-        thread_handles.into_iter().for_each(|h| {
-            h.join().unwrap();
+        // Await termination of all spawned threads
+        thread_handles.into_iter().for_each(|join_handle| {
+            join_handle.join().unwrap();
         });
 
-        /*Writing results to output matrix*/
-        Self::write_results(input_rx, &mut output);
+        // create the boolean matrix used to hold the result of the simulation. The matrix has as many
+        // rows as the number of output neurons and as many columns ad the number of time steps involved
+        // in the simulation. If output[i][j] == true, it means that the exit 'i' produced a Pulse at time
+        // step 'j'. Otherwise, if false, there is no pulse for that time step.
+        //
+        // The matrix is initialized with 'false' values.
+        let mut output = self.create_output_matrix(snn_time_steps_number);
+
+        // write results to the output boolean matrix
+        Self::write_results(receiver_from_previous_layer, &mut output);
 
         return Ok(output);
     }

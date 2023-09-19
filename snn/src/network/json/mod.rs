@@ -1,11 +1,11 @@
-use crate::network::{Network,neuron::Neuron};
+use crate::network::{neuron::Neuron, Network};
 use serde::{Deserialize, Serialize};
 use std::fs;
 
 #[derive(Serialize, Deserialize)]
 pub struct NetworkData {
     pub time_step_duration_us: f64,
-    pub nr_inputs: usize, 
+    pub nr_inputs: usize,
     pub nr_outputs: usize,
     pub layers: Vec<LayerData>,
 }
@@ -24,7 +24,6 @@ pub struct NeuronData {
     pub v_reset: f64,
     pub tau: f64,
 }
-
 
 pub fn load_from_file(path: &str) -> Network {
     let json_str = fs::read_to_string(path).expect("Couldn't read file");

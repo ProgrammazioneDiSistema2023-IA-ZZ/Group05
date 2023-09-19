@@ -1,4 +1,5 @@
 use snn::network::{neuron::Neuron, Network};
+use snn::register::Register;
 
 fn main() {
     let mut l0 = Vec::new();
@@ -6,13 +7,23 @@ fn main() {
 
     for _ in 0..4 {
         let mut neuron = Neuron::default();
-        neuron.weights.append(&mut vec![4.0, 4.0, 4.0, 4.0]);
+        neuron.weights.append(&mut vec![
+            Register::new(4.0),
+            Register::new(4.0),
+            Register::new(4.0),
+            Register::new(4.0),
+        ]);
         l0.push(neuron);
     }
 
     for _ in 0..3 {
         let mut neuron = Neuron::default();
-        neuron.weights.append(&mut vec![3.5, 3.5, 3.5, 3.5]);
+        neuron.weights.append(&mut vec![
+            Register::new(3.5),
+            Register::new(3.5),
+            Register::new(3.5),
+            Register::new(3.5),
+        ]);
         l1.push(neuron);
     }
 
@@ -20,7 +31,7 @@ fn main() {
     layers.push(l0);
     layers.push(l1);
 
-    let mut network = Network {
+    let network = Network {
         nr_inputs: 4,
         nr_outputs: 3,
         time_step_duration_us: 100.0,
