@@ -126,6 +126,39 @@ impl Neuron {
         return false;
     }
 
+    /// simulate loss of membrane potential for a Neuron when other Neurons of the same
+    /// layer 'fire' at the preceding time step. The amount of potential loss depends on
+    /// the content of the internal_weights Vec
+    pub fn inhibite_after_pulses_emission(
+        &mut self,
+        pulse_sources: &Vec<usize>,
+        time_step: usize,
+        time_step_duration_ms: f64,
+    ) {
+        // reading required parameters and states of the Neuron from Registers. If any
+        // Register is affected by a Damage, this could alter the read value.
+        let v_rest = self.v_rest.read_value(Some(time_step)).unwrap();
+        let old_v_mem = self.v_mem.read_value(Some(time_step)).unwrap();
+
+        // computing v_mem inhibitive contribution
+        let inhibitive_contribution = self.get_inhibitive_contribution(pulse_sources, time_step);
+
+        // computing new Membrane Potential
+        let v_mem = v_rest
+            + (old_v_mem - v_rest)
+                * ((self.last_received_pulse_step as f64 - time_step as f64)
+                    * time_step_duration_ms
+                    / self.tau)
+                    .exp()
+            + inhibitive_contribution;
+
+        // updating last_received_pulse_step
+        self.last_received_pulse_step = time_step;
+
+        // writing new v_mem into Register
+        self.v_mem.write_value(v_mem);
+    }
+
     ///compute pulse contribution to v_mem, based on the stored weights
     fn get_pulses_contribution(&self, pulse_sources: &Vec<usize>, time_step: usize) -> f64 {
         let mut contribution = 0.0;
@@ -136,6 +169,21 @@ impl Neuron {
                 .unwrap();
             // add contribution
             contribution += weight;
+        }
+
+        return contribution;
+    }
+
+    ///compute inhibitive contribution to v_mem, based on the stored internal weights
+    fn get_inhibitive_contribution(&self, pulse_sources: &Vec<usize>, time_step: usize) -> f64 {
+        let mut contribution = 0.0;
+        for source_index in pulse_sources {
+            // read internal weight from Register
+            let internal_weight = self.internal_weights[*source_index]
+                .read_value(Some(time_step))
+                .unwrap();
+            // add contribution
+            contribution += internal_weight;
         }
 
         return contribution;
