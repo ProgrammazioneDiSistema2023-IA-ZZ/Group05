@@ -1,0 +1,38 @@
+use snn::network::{self, DamageModel, FaultyElement};
+
+fn main() {
+    let network = network::json::load_from_file("src\\snn_data.json");
+    let input = vec![
+        vec![true, true, false, true, false, true, true, true, true, true],
+        vec![true, true, true, true, true, true, true, true, true, true],
+        vec![true, true, false, true, true, true, true, true, true, true],
+        vec![true, true, true, true, true, true, true, true, true, false],
+        vec![true, true, true, true, true, true, true, true, true, true],
+        vec![true, true, true, true, true, true, true, true, true, true],
+    ];
+
+    let faulty_elements = vec![
+        FaultyElement::Weights,
+        FaultyElement::Thresholds,
+        FaultyElement::MembranePotentials,
+        FaultyElement::ResetPotentials,
+        FaultyElement::PotentialsAtRest,
+    ];
+    let damage_type = DamageModel::StuckAt0;
+    let output_matrix = network
+        .simulate(faulty_elements, damage_type, 10000, input)
+        .unwrap();
+
+    /* output_matrix
+    .iter()
+    .enumerate()
+    .for_each(|(ind, v)| println!("out{}: {:?}", ind, v)); */
+
+    for i in 0..3 {
+        print!("out{i}: ");
+        for j in 0..10 {
+            print!("{:?} ", output_matrix[i][j].diff_count);
+        }
+        println!();
+    }
+}

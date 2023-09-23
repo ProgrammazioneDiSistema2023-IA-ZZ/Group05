@@ -1,19 +1,8 @@
 /* The register module defines:
-- an enum FaultyElement which lists the type of elements which can be potentially subject
-to damages
 - an enum Damage which represents the kind of damage which could occour
 inside a register
 - a struct Register which represents a model of an hardware register containing
 floating point values on 64 bits (f64 values). */
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum FaultyElement {
-    Weights,
-    Thresholds,
-    MembranePotentials,
-    ResetPotentials,
-    PotentialsAtRest,
-}
 
 #[derive(Clone, Copy)]
 pub enum Damage {
@@ -131,15 +120,12 @@ impl Register {
 
     fn bitwise_and(value: f64, mask: u64) -> f64 {
         /* Convert f64 into a u64 */
-        let mut int_val: u64 = 0;
-        std::mem::swap(&mut int_val, unsafe { std::mem::transmute(value) });
-
+        let mut int_val: u64 = unsafe { std::mem::transmute(value) };
         /* Apply mask and */
         int_val &= mask;
 
         /* Convert u64 back into f64 */
-        let mut res: f64 = 0.0;
-        std::mem::swap(&mut res, unsafe { std::mem::transmute(int_val) });
+        let res: f64 = unsafe { std::mem::transmute(int_val) };
 
         /* Return res */
         res
@@ -147,15 +133,12 @@ impl Register {
 
     fn bitwise_or(value: f64, mask: u64) -> f64 {
         /* Convert f64 into a u64 */
-        let mut int_val: u64 = 0;
-        std::mem::swap(&mut int_val, unsafe { std::mem::transmute(value) });
-
-        /* Apply mask or */
+        let mut int_val: u64 = unsafe { std::mem::transmute(value) };
+        /* Apply mask and */
         int_val |= mask;
 
         /* Convert u64 back into f64 */
-        let mut res: f64 = 0.0;
-        std::mem::swap(&mut res, unsafe { std::mem::transmute(int_val) });
+        let res: f64 = unsafe { std::mem::transmute(int_val) };
 
         /* Return res */
         res
@@ -163,15 +146,12 @@ impl Register {
 
     fn bitwise_xor(value: f64, mask: u64) -> f64 {
         /* Convert f64 into a u64 */
-        let mut int_val: u64 = 0;
-        std::mem::swap(&mut int_val, unsafe { std::mem::transmute(value) });
-
-        /* Apply mask xor */
+        let mut int_val: u64 = unsafe { std::mem::transmute(value) };
+        /* Apply mask and */
         int_val ^= mask;
 
-        /* Convert u64 back to f64 */
-        let mut res: f64 = 0.0;
-        std::mem::swap(&mut res, unsafe { std::mem::transmute(int_val) });
+        /* Convert u64 back into f64 */
+        let res: f64 = unsafe { std::mem::transmute(int_val) };
 
         /* Return res */
         res

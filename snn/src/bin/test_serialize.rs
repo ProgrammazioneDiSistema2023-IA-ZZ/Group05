@@ -28,12 +28,12 @@ fn main() {
     /*Random number generator for inter-layer weights (positive)*/
     let mut rng = rand::thread_rng();
     let min_w = 1.0;
-    let max_w = 7.0;
+    let max_w = 10.0;
     let distr = Uniform::new_inclusive(min_w, max_w);
 
     /*Random number generator for intra-layer weights (negative)*/
     let mut rng2 = rand::thread_rng();
-    let min_w2 = -6.0;
+    let min_w2 = -3.0;
     let max_w2 = -1.0;
     let distr2 = Uniform::new_inclusive(min_w2, max_w2);
 
