@@ -5,11 +5,11 @@ fn main() {
         "src\\snn_data.json",
     );
     let input = vec![
-        vec![true, false, true, false, false],
-        vec![true, true, true, false, true],
+        vec![true, true, false, false, false],
+        vec![true, false, false, false, true],
         vec![false, false, false, true, false],
-        vec![true, false, false, true, true],
-        vec![false, true, true, false, false],
+        vec![false, false, false, true, true],
+        vec![false, false, false, false, false],
         vec![false, false, false, false, true],
     ];
     let output = network.run(input).unwrap();
