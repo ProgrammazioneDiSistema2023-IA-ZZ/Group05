@@ -1,7 +1,7 @@
 use snn::network::{self, DamageModel, FaultyElement};
 
 fn main() {
-    let network = network::json::load_from_file("src\\snn_data.json");
+    let network = network::json::load_from_file("sources\\snn_data.json");
     let input = vec![
         vec![true, true, false, true, false, true, true, true, true, true],
         vec![true, true, true, true, true, true, true, true, true, true],
@@ -19,7 +19,7 @@ fn main() {
         FaultyElement::PotentialsAtRest,
     ];
     let damage_type = DamageModel::StuckAt0;
-    let output_matrix = network
+    let output = network
         .simulate(faulty_elements, damage_type, 10000, input)
         .unwrap();
 
@@ -27,6 +27,8 @@ fn main() {
     .iter()
     .enumerate()
     .for_each(|(ind, v)| println!("out{}: {:?}", ind, v)); */
+
+    let output_matrix = output.diffs;
 
     for i in 0..3 {
         print!("out{i}: ");

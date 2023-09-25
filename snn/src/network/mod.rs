@@ -3,14 +3,15 @@ use rand::{seq::SliceRandom, thread_rng};
 
 use crate::network::neuron::{Message, Neuron};
 use crate::register::Damage;
+use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{self, Receiver};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
 
 pub mod json;
 pub mod neuron;
 
 /// Struct to hold the simulation result
+#[derive(Serialize, Deserialize)]
 pub struct SimulationResultCell {
     // keep track of how many times the output for a certain exit and time step
     // differs from the original simulation
@@ -24,6 +25,38 @@ impl SimulationResultCell {
         SimulationResultCell {
             diff_count: 0,
             at_iterations: Vec::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SimulationResult {
+    pub output_without_damages: Vec<Vec<bool>>,
+    pub diffs: Vec<Vec<SimulationResultCell>>,
+}
+
+impl SimulationResult {
+    pub fn print(&self) {
+        // print output_without_damages
+        println!("Output without damages");
+        for (i, row) in self.output_without_damages.iter().enumerate() {
+            print!("Out{i}: ");
+            for col in row.iter() {
+                print!("{} ", col);
+            }
+            println!("");
+        }
+
+        println!("\n");
+        println!("Number of recored differences");
+
+        // print diffs
+        for (i, row) in self.diffs.iter().enumerate() {
+            print!("Out{i}: ");
+            for col in row.iter() {
+                print!("{} ", col.diff_count);
+            }
+            println!("");
         }
     }
 }
@@ -142,13 +175,7 @@ impl Network {
     /// entrance of the SNN, and each column corresponds to a certain time step.
     /// If input[i][j] == true, it means that, at time step 'j', the SNN receives a pulse on
     /// the entrance 'i'. Otherwise, if it false, no input is received for that time step.
-    pub fn run(mut self, input: Vec<Vec<bool>>) -> Result<Vec<Vec<bool>>, ()> {
-        // Check if all rows in the matrix have the same length. If not, the input
-        // is invalid and Err is returned
-        if !Self::input_matrix_is_valid(&input) {
-            return Err(());
-        }
-
+    pub fn run(mut self, input: Vec<Vec<bool>>) -> Vec<Vec<bool>> {
         // Number of entrances of SNN, equal to the number of rows of the 'input' matrix
         let snn_inputs_number = input.len();
 
@@ -326,7 +353,7 @@ impl Network {
         // write results to the output boolean matrix
         Self::write_results(receiver_from_previous_layer, &mut output);
 
-        return Ok(output);
+        return output;
     }
 
     /// Simulate the behaviour of the SNN in presence of damages to its fundamental elements.
@@ -341,7 +368,7 @@ impl Network {
         damage_type: DamageModel,
         iterations: usize,
         input: Vec<Vec<bool>>,
-    ) -> Option<Vec<Vec<SimulationResultCell>>> {
+    ) -> Option<SimulationResult> {
         // check whether the input matrix has valid dimensions
         if !Self::input_matrix_is_valid(&input) {
             return None;
@@ -356,38 +383,19 @@ impl Network {
             }
         }
 
-        println!("Created output matrix");
-
         // run the simulation without applying any damages to network elements
-        let output_without_damages = self.clone().run(input.clone()).unwrap();
-        for i in 0..output_without_damages.len() {
-            for j in 0..output_without_damages[0].len() {
-                print!("{} ", output_without_damages[i][j]);
-            }
-            println!();
-        }
-
-        println!("\n\n");
+        let output_without_damages = self.clone().run(input.clone());
 
         // run the simulation as many times as specified by 'iterations' parameter, applying the
         // the chosen DamageModel ('damage_type') each time to a different element chosen randomly among
         // those specified in the 'faulty_elements' Vec.
-
         for iteration_number in 0..iterations {
-            //println!("iteration n. {iteration_number}");
             // clone the network, so that each instance can be Damaged independently
             let mut snn = self.clone();
             // apply damage to the snn
             Self::apply_damage_to_snn(&mut snn, damage_type, &faulty_elements, input[0].len());
 
-            let output_with_damage = Self::run(snn, input.clone()).unwrap();
-            /* for i in 0..output_with_damage.len() {
-                for j in 0..output_with_damage[0].len() {
-                    print!("{} ", output_with_damage[i][j]);
-                }
-                println!();
-            }
-            println!("\n\n"); */
+            let output_with_damage = Self::run(snn, input.clone());
 
             // compare matrix to the one obtained without damages, updating result matrix
             Self::compare_outputs(
@@ -396,12 +404,13 @@ impl Network {
                 &mut simulation_result_matrix,
                 iteration_number,
             );
-
-            //std::thread::sleep(Duration::from_millis(1));
         }
 
         // return result structure
-        return Some(simulation_result_matrix);
+        return Some(SimulationResult {
+            output_without_damages,
+            diffs: simulation_result_matrix,
+        });
     }
 
     fn compare_outputs(

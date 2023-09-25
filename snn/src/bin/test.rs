@@ -45,7 +45,7 @@ fn main() {
         vec![true, false, false, false, true, false, false, false, true],
     ];
 
-    let output = network.run(input).unwrap();
+    let output = network.run(input);
 
     for row in &output {
         println!("{:?}", row);

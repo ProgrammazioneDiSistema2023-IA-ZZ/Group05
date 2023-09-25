@@ -49,3 +49,15 @@ pub fn load_from_file(path: &str) -> Network {
 
     return network;
 }
+
+/// Serializable/Deserializable input matrix
+#[derive(Serialize, Deserialize)]
+pub struct InputMatrix(pub Vec<Vec<bool>>);
+
+impl InputMatrix {
+    pub fn load_from_file(path: &str) -> Self {
+        let json_str = fs::read_to_string(path).expect("Couldn't read file");
+        let input_matrix: Self = serde_json::from_str(&json_str).expect("Incorrect file format");
+        input_matrix
+    }
+}

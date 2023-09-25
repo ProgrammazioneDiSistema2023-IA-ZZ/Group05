@@ -10,7 +10,7 @@ fn main() {
         vec![false, true, true, false, false],
         vec![false, false, false, false, true],
     ];
-    let output = network.run(input).unwrap();
+    let output = network.run(input);
 
     output
         .iter()

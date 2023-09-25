@@ -1,0 +1,225 @@
+{
+    "output_without_damages": [
+        [
+            false,
+            true,
+            false,
+            true,
+            false,
+            true,
+            false,
+            true,
+            false,
+            true
+        ],
+        [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true
+        ],
+        [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true
+        ]
+    ],
+    "diffs": [
+        [
+            {
+                "diff_count": 1,
+                "at_iterations": [
+                    952
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 5,
+                "at_iterations": [
+                    16,
+                    145,
+                    314,
+                    943,
+                    952
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 5,
+                "at_iterations": [
+                    16,
+                    145,
+                    314,
+                    943,
+                    952
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 5,
+                "at_iterations": [
+                    16,
+                    145,
+                    314,
+                    943,
+                    952
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 3,
+                "at_iterations": [
+                    16,
+                    145,
+                    314
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            }
+        ],
+        [
+            {
+                "diff_count": 1,
+                "at_iterations": [
+                    799
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 1,
+                "at_iterations": [
+                    799
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 1,
+                "at_iterations": [
+                    799
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 1,
+                "at_iterations": [
+                    799
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 12,
+                "at_iterations": [
+                    271,
+                    331,
+                    453,
+                    509,
+                    648,
+                    679,
+                    746,
+                    770,
+                    788,
+                    816,
+                    868,
+                    898
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            }
+        ],
+        [
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            },
+            {
+                "diff_count": 11,
+                "at_iterations": [
+                    453,
+                    509,
+                    562,
+                    679,
+                    757,
+                    788,
+                    816,
+                    825,
+                    868,
+                    898,
+                    923
+                ]
+            },
+            {
+                "diff_count": 0,
+                "at_iterations": []
+            }
+        ]
+    ]
+}
