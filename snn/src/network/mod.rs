@@ -222,7 +222,7 @@ impl Network {
         //      a newly created channel
         // - future_receiver_from_previous_layer: it represents the receiver coupled with the
         //      sender used to transfer messages to the following layer, so, once the thread is
-        //      spwaned, this receiver must be assigned to the variable 'receiver_from_previous_layer',
+        //      spawned, this receiver must be assigned to the variable 'receiver_from_previous_layer',
         //      so that it becomes the input channel for the next layer. Then its content is updated with
         //      the receiver of a newly created channel
 
@@ -269,7 +269,7 @@ impl Network {
                     for time_step in 0..snn_time_steps_number {
                         // Vec to keep track of the origin of each Pulse received during the current time step,
                         // i.e. the index of the neuron belonging to the previous layer - or entrance - which generated
-                        // the Pulse itself); this is needed to allow the Neurons to choose the right Weight when
+                        // the Pulse itself; this is needed to allow the Neurons to choose the right Weight when
                         // computing the new Membrane Potential
                         let mut pulse_sources = Vec::new();
 
