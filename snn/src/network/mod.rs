@@ -10,27 +10,48 @@ use std::thread::{self, JoinHandle};
 pub mod json;
 pub mod neuron;
 
+/// Struct to describe damage in detail
+#[derive(Clone, Copy, Serialize, Deserialize)]
+pub struct DamageDetail {
+    at_iteration: usize,
+    damage_type: FaultyElement,
+    at_layer: usize,
+    at_neuron: usize,
+    at_bit: usize,
+}
+
 /// Struct to hold the simulation result
 #[derive(Serialize, Deserialize)]
 pub struct SimulationResultCell {
+    // index of the output neuron which produced the value
+    pub output_index: usize,
+    // time step when this output was produced
+    pub time_step: usize,
+    // value resulting from simulation, opposite to the expected value
+    pub actual_value: bool,
     // keep track of how many times the output for a certain exit and time step
     // differs from the original simulation
     pub diff_count: usize,
     // keep track of the iterations when the output differs from the original simulation
-    pub at_iterations: Vec<usize>,
+    pub damage_details: Vec<DamageDetail>,
 }
 
 impl SimulationResultCell {
-    fn new() -> Self {
+    fn new(row_id: usize, col_id: usize) -> Self {
         SimulationResultCell {
+            output_index: row_id,
+            time_step: col_id,
+            actual_value: false,
             diff_count: 0,
-            at_iterations: Vec::new(),
+            damage_details: Vec::new(),
         }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct SimulationResult {
+    pub number_of_iterations: usize,
+    pub type_of_damage: DamageModel,
     pub output_without_damages: Vec<Vec<bool>>,
     pub diffs: Vec<Vec<SimulationResultCell>>,
 }
@@ -63,22 +84,32 @@ impl SimulationResult {
 
 /// enum FaultyElement lists the types of elements in the network which could be
 /// potentially subject to damages
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum FaultyElement {
     Weights,
     Thresholds,
     MembranePotentials,
     ResetPotentials,
     PotentialsAtRest,
+    Comparator,
+    Adder,
+    Multiplier,
+    Divider,
 }
 
 /// enum DamageModel is used to specify what kind of damage to the network elements
 /// should be simulated
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum DamageModel {
     StuckAt0,
     StuckAt1,
     TransientBitFlip,
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize)]
+pub enum NeuronModel {
+    LeakyIntegrateAndFire,
+    IntegrateAndFire,
 }
 
 /// The struct Network represents a Spiking Neural Network.
@@ -95,16 +126,23 @@ pub struct Network {
     pub nr_outputs: usize,
     pub time_step_duration_us: f64, // Time step duration
     pub layers: Vec<Vec<Neuron>>,   // Vec collecting layers (other Vecs)
+    pub model: NeuronModel,         // Model used by neurons (e.g. LIF, IF)
 }
 
 impl Network {
     /// Create a network
-    pub fn new(time_step_duration_us: f64, nr_inputs: usize, nr_outputs: usize) -> Self {
+    pub fn new(
+        time_step_duration_us: f64,
+        nr_inputs: usize,
+        nr_outputs: usize,
+        model: NeuronModel,
+    ) -> Self {
         Network {
             nr_inputs,
             nr_outputs,
             time_step_duration_us,
             layers: Vec::new(),
+            model,
         }
     }
 
@@ -286,6 +324,7 @@ impl Network {
                                     &emitted_pulse_sources,
                                     time_step,
                                     time_step_duration_ms,
+                                    self.model,
                                 );
                             }
                             // all neurons updated: clear emitted_pulse_sources Vec so that it can
@@ -304,6 +343,7 @@ impl Network {
                                     &pulse_sources,
                                     time_step,
                                     time_step_duration_ms,
+                                    self.model,
                                 ) {
                                     // add current neuron to emitted_pulse_sources
                                     emitted_pulse_sources.push(i);
@@ -378,8 +418,8 @@ impl Network {
         let mut simulation_result_matrix = Vec::new();
         for i in 0..self.nr_outputs {
             simulation_result_matrix.push(Vec::new());
-            for _ in 0..input[0].len() {
-                simulation_result_matrix[i].push(SimulationResultCell::new());
+            for j in 0..input[0].len() {
+                simulation_result_matrix[i].push(SimulationResultCell::new(i, j));
             }
         }
 
@@ -393,7 +433,9 @@ impl Network {
             // clone the network, so that each instance can be Damaged independently
             let mut snn = self.clone();
             // apply damage to the snn
-            Self::apply_damage_to_snn(&mut snn, damage_type, &faulty_elements, input[0].len());
+            let damage_detail =
+                Self::apply_damage_to_snn(&mut snn, damage_type, &faulty_elements, input[0].len())
+                    .unwrap();
 
             let output_with_damage = Self::run(snn, input.clone());
 
@@ -403,11 +445,26 @@ impl Network {
                 &output_with_damage,
                 &mut simulation_result_matrix,
                 iteration_number,
+                damage_detail,
             );
+        }
+
+        // filling result with actual values from simulation with damages for each output
+        // and time step
+        for i in 0..output_without_damages.len() {
+            for j in 0..output_without_damages[0].len() {
+                if simulation_result_matrix[i][j].diff_count != 0 {
+                    simulation_result_matrix[i][j].actual_value = !output_without_damages[i][j];
+                } else {
+                    simulation_result_matrix[i][j].actual_value = output_without_damages[i][j];
+                }
+            }
         }
 
         // return result structure
         return Some(SimulationResult {
+            number_of_iterations: iterations,
+            type_of_damage: damage_type,
             output_without_damages,
             diffs: simulation_result_matrix,
         });
@@ -418,15 +475,17 @@ impl Network {
         output_with_damage: &Vec<Vec<bool>>,
         simulation_result_matrix: &mut Vec<Vec<SimulationResultCell>>,
         iteration_number: usize,
+        mut damage_detail: DamageDetail,
     ) {
         // compare the two output matrixes and update the result matrix
         for i in 0..output_with_damage.len() {
             for j in 0..output_with_damage[0].len() {
                 if output_with_damage[i][j] != output_without_damages[i][j] {
+                    damage_detail.at_iteration = iteration_number;
                     simulation_result_matrix[i][j].diff_count += 1;
                     simulation_result_matrix[i][j]
-                        .at_iterations
-                        .push(iteration_number);
+                        .damage_details
+                        .push(damage_detail);
                 }
             }
         }
@@ -439,18 +498,21 @@ impl Network {
         damage_type: DamageModel,
         faulty_elements: &Vec<FaultyElement>,
         number_of_time_steps: usize,
-    ) {
+    ) -> Option<DamageDetail> {
         // create a random number generator
         let mut rng = thread_rng();
 
-        // chose a random element
+        // choose a random element
         match faulty_elements.choose(&mut rng) {
             // if an element is found
             Some(faulty_element) => {
                 // choose a random layer
-                let layer_to_damage = self.layers.choose_mut(&mut rng).unwrap();
+                let index_of_layer_to_damage = rand::thread_rng().gen_range(0..self.layers.len());
+                let layer_to_damage = &mut self.layers[index_of_layer_to_damage];
                 // choose a random neuron
-                let neuron_to_damage = layer_to_damage.choose_mut(&mut rng).unwrap();
+                let index_of_neuron_to_damage =
+                    rand::thread_rng().gen_range(0..layer_to_damage.len());
+                let neuron_to_damage = &mut layer_to_damage[index_of_neuron_to_damage];
                 // choose bit position where to apply the damage (between 0 and 63 - since
                 // Registers are on 64 bits)
                 let bit_position = rng.gen_range(0..64) as usize;
@@ -497,11 +559,34 @@ impl Network {
                         // apply damage to the Register containing v_rest
                         neuron_to_damage.v_rest.apply_damage(damage);
                     }
+                    FaultyElement::Comparator => {
+                        neuron_to_damage.cmp_reg.apply_damage(damage);
+                    }
+                    FaultyElement::Adder => {
+                        neuron_to_damage.add_reg.apply_damage(damage);
+                    }
+                    FaultyElement::Multiplier => {
+                        neuron_to_damage.mul_reg.apply_damage(damage);
+                    }
+                    FaultyElement::Divider => {
+                        neuron_to_damage.div_reg.apply_damage(damage);
+                    }
                 }
+
+                // struct which describes the damage in detail. The field 'at_iteration' here is dummy,
+                // since it will be replaced if and when a difference between the expected output and
+                // actual one is found.
+                return Some(DamageDetail {
+                    at_iteration: 0,
+                    damage_type: *faulty_element,
+                    at_layer: index_of_layer_to_damage,
+                    at_neuron: index_of_neuron_to_damage,
+                    at_bit: bit_position,
+                });
             }
             // if no element is found, return
             None => {
-                return;
+                return None;
             }
         }
     }

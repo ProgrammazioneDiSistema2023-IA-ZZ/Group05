@@ -22,7 +22,7 @@ struct Args {
         short,
         long,
         default_value_t = String::from(
-            "weights, thresholds, membrane_potentials, reset_potentials, potentials_at_rest"
+            "weights, thresholds, membrane_potentials, reset_potentials, potentials_at_rest, comparator, adder, multiplier, divider"
         )
     )]
     damaged_elements_list: String,
@@ -62,6 +62,18 @@ fn main() {
             }
             "potentials_at_rest" => {
                 faulty_elements.push(FaultyElement::PotentialsAtRest);
+            }
+            "comparator" => {
+                faulty_elements.push(FaultyElement::Comparator);
+            }
+            "adder" => {
+                faulty_elements.push(FaultyElement::Adder);
+            }
+            "multiplier" => {
+                faulty_elements.push(FaultyElement::Multiplier);
+            }
+            "divider" => {
+                faulty_elements.push(FaultyElement::Divider);
             }
             _ => {
                 panic!("{element} is not a valid element!");

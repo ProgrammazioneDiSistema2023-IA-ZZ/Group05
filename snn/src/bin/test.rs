@@ -1,3 +1,4 @@
+use snn::network::NeuronModel;
 use snn::network::{neuron::Neuron, Network};
 use snn::register::Register;
 
@@ -31,12 +32,11 @@ fn main() {
     layers.push(l0);
     layers.push(l1);
 
-    let network = Network {
-        nr_inputs: 4,
-        nr_outputs: 3,
-        time_step_duration_us: 100.0,
-        layers,
-    };
+    let mut network = Network::new(100.0, 4, 3, NeuronModel::LeakyIntegrateAndFire);
+
+    layers
+        .into_iter()
+        .for_each(|layer| network.add_layer(layer));
 
     let input = vec![
         vec![true, false, false, true, true, false, false, true, true],

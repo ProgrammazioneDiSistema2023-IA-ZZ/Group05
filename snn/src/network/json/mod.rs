@@ -2,11 +2,14 @@ use crate::network::{neuron::Neuron, Network};
 use serde::{Deserialize, Serialize};
 use std::fs;
 
+use super::NeuronModel;
+
 #[derive(Serialize, Deserialize)]
 pub struct NetworkData {
     pub time_step_duration_us: f64,
     pub nr_inputs: usize,
     pub nr_outputs: usize,
+    pub model: NeuronModel,
     pub layers: Vec<LayerData>,
 }
 
@@ -29,7 +32,12 @@ pub fn load_from_file(path: &str) -> Network {
     let json_str = fs::read_to_string(path).expect("Couldn't read file");
     let nd: NetworkData = serde_json::from_str(&json_str).expect("Incorrect file format");
 
-    let mut network = Network::new(nd.time_step_duration_us, nd.nr_inputs, nd.nr_outputs);
+    let mut network = Network::new(
+        nd.time_step_duration_us,
+        nd.nr_inputs,
+        nd.nr_outputs,
+        nd.model,
+    );
 
     for layer_data in nd.layers {
         let mut layer = Vec::<Neuron>::new();

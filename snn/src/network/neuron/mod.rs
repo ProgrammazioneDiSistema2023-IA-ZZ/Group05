@@ -1,5 +1,7 @@
 use crate::register::Register;
 
+use super::NeuronModel;
+
 /// The Neuron struct represents a neuron of the spiking neural network.
 /// A neuron is characterized by a series of parameters which describe its
 /// electrical behavior (v_rest, v_reset, v_th, tau).
@@ -20,11 +22,15 @@ pub struct Neuron {
     pub v_th: Register, // (mV) threshold voltage: if v_mem goes upper than this value, then a spike is produced as output
     pub v_rest: Register, // (mV) when neuron is not stimulated by pulses, v_mem decreases exponentially towards this value
     pub v_reset: Register, // (mV) when a pulse is produced, v_mem is reset to this value
-    pub tau: f64, // (ms) time constant for exponential v_mem decrease in absence of received pulses
+    pub tau: Register, // (ms) time constant for exponential v_mem decrease in absence of received pulses
     pub v_mem: Register, // (mV) membrane potential after receiving last pulse
     pub last_received_pulse_step: usize, // discrete time step when last pulse was received
     pub weights: Vec<Register>, // weights of each synapse going from the 'i'th neuron of the previous layer to this neuron
     pub internal_weights: Vec<Register>, //weights of synapses internal to layer
+    pub add_reg: Register,      // register which contains the output of adder
+    pub mul_reg: Register,      // register which contains the output of multiplier
+    pub cmp_reg: Register,      // register which contains the output of comparator
+    pub div_reg: Register,      // register which contains the output of divider
 }
 
 impl Default for Neuron {
@@ -34,11 +40,15 @@ impl Default for Neuron {
             v_th: Register::new(-55.0),
             v_rest: Register::new(-70.0),
             v_reset: Register::new(-70.0),
-            tau: 10.0,
+            tau: Register::new(10.0),
             v_mem: Register::new(-70.0),
             last_received_pulse_step: 0,
             weights: Vec::new(),
             internal_weights: Vec::new(),
+            add_reg: Register::new(0.0),
+            mul_reg: Register::new(0.0),
+            cmp_reg: Register::new(0.0),
+            div_reg: Register::new(0.0),
         }
     }
 }
@@ -50,11 +60,15 @@ impl Neuron {
             v_th: Register::new(v_th),
             v_rest: Register::new(v_rest),
             v_reset: Register::new(v_reset),
-            tau,
+            tau: Register::new(tau),
             v_mem: Register::new(v_rest),
             last_received_pulse_step: 0,
             weights: Vec::new(),
             internal_weights: Vec::new(),
+            add_reg: Register::new(0.0),
+            mul_reg: Register::new(0.0),
+            cmp_reg: Register::new(0.0),
+            div_reg: Register::new(0.0),
         }
     }
 
@@ -91,38 +105,27 @@ impl Neuron {
         pulse_sources: &Vec<usize>,
         time_step: usize,
         time_step_duration_ms: f64,
+        neuron_model: NeuronModel,
     ) -> bool {
-        // reading required parameters and states of the Neuron from Registers. If any
-        // Register is affected by a Damage, this could alter the read value.
-        let v_th = self.v_th.read_value(Some(time_step)).unwrap();
-        let v_rest = self.v_rest.read_value(Some(time_step)).unwrap();
-        let v_reset = self.v_reset.read_value(Some(time_step)).unwrap();
-        let old_v_mem = self.v_mem.read_value(Some(time_step)).unwrap();
-
-        // computing v_mem increment contribution due to pulses
-        let pulses_contribution = self.get_pulses_contribution(pulse_sources, time_step);
-
-        // computing new Membrane Potential
-        let v_mem = v_rest
-            + (old_v_mem - v_rest)
-                * ((self.last_received_pulse_step as f64 - time_step as f64)
-                    * time_step_duration_ms
-                    / self.tau)
-                    .exp()
-            + pulses_contribution;
+        self.update_membrane_potential(
+            pulse_sources,
+            time_step,
+            time_step_duration_ms,
+            neuron_model,
+            PulseContributionMode::Excitatory,
+        );
 
         // updating last_received_pulse_step
         self.last_received_pulse_step = time_step;
 
         //comparing v_mem to threshold
-        if v_mem >= v_th {
+        Register::cmp(self.v_mem, self.v_th, &mut self.cmp_reg, time_step);
+        if self.cmp_reg.read_value(Some(time_step)).unwrap() >= 0.0 {
             // The Neuron fires: Membrane potential must be reset
-            self.v_mem.write_value(v_reset);
+            self.v_reset.copy_to(&mut self.v_mem, time_step);
             return true;
         }
 
-        // The Neuron does not fire: write new v_mem to the register
-        self.v_mem.write_value(v_mem);
         return false;
     }
 
@@ -134,59 +137,124 @@ impl Neuron {
         pulse_sources: &Vec<usize>,
         time_step: usize,
         time_step_duration_ms: f64,
+        neuron_model: NeuronModel,
     ) {
-        // reading required parameters and states of the Neuron from Registers. If any
-        // Register is affected by a Damage, this could alter the read value.
-        let v_rest = self.v_rest.read_value(Some(time_step)).unwrap();
-        let old_v_mem = self.v_mem.read_value(Some(time_step)).unwrap();
-
-        // computing v_mem inhibitive contribution
-        let inhibitive_contribution = self.get_inhibitive_contribution(pulse_sources, time_step);
-
-        // computing new Membrane Potential
-        let v_mem = v_rest
-            + (old_v_mem - v_rest)
-                * ((self.last_received_pulse_step as f64 - time_step as f64)
-                    * time_step_duration_ms
-                    / self.tau)
-                    .exp()
-            + inhibitive_contribution;
+        self.update_membrane_potential(
+            pulse_sources,
+            time_step,
+            time_step_duration_ms,
+            neuron_model,
+            PulseContributionMode::Inhibitive,
+        );
 
         // updating last_received_pulse_step
         self.last_received_pulse_step = time_step;
-
-        // writing new v_mem into Register
-        self.v_mem.write_value(v_mem);
     }
 
     ///compute pulse contribution to v_mem, based on the stored weights
-    fn get_pulses_contribution(&self, pulse_sources: &Vec<usize>, time_step: usize) -> f64 {
-        let mut contribution = 0.0;
+    fn get_pulses_contribution(&self, pulse_sources: &Vec<usize>, time_step: usize) -> Register {
+        let mut add_reg = self.add_reg;
+        add_reg.write_value(0.0);
         for source_index in pulse_sources {
-            // read weight from Register
-            let weight = self.weights[*source_index]
-                .read_value(Some(time_step))
-                .unwrap();
-            // add contribution
-            contribution += weight;
+            Register::add(
+                add_reg,
+                self.weights[*source_index],
+                &mut add_reg,
+                time_step,
+            );
         }
 
-        return contribution;
+        return add_reg;
     }
 
     ///compute inhibitive contribution to v_mem, based on the stored internal weights
-    fn get_inhibitive_contribution(&self, pulse_sources: &Vec<usize>, time_step: usize) -> f64 {
-        let mut contribution = 0.0;
+    fn get_inhibitive_contribution(
+        &self,
+        pulse_sources: &Vec<usize>,
+        time_step: usize,
+    ) -> Register {
+        let mut add_reg = self.add_reg;
+        add_reg.write_value(0.0);
         for source_index in pulse_sources {
-            // read internal weight from Register
-            let internal_weight = self.internal_weights[*source_index]
-                .read_value(Some(time_step))
-                .unwrap();
-            // add contribution
-            contribution += internal_weight;
+            Register::add(
+                add_reg,
+                self.internal_weights[*source_index],
+                &mut add_reg,
+                time_step,
+            );
         }
 
-        return contribution;
+        return add_reg;
+    }
+
+    /// Update membrane potential according to the provided neuron model
+    fn update_membrane_potential(
+        &mut self,
+        pulse_sources: &Vec<usize>,
+        time_step: usize,
+        time_step_duration_ms: f64,
+        neuron_model: NeuronModel,
+        pulse_contribution_mode: PulseContributionMode,
+    ) {
+        // computing v_mem contribution due to pulses
+        let pulses_contribution = match pulse_contribution_mode {
+            PulseContributionMode::Excitatory => {
+                self.get_pulses_contribution(pulse_sources, time_step)
+            }
+            PulseContributionMode::Inhibitive => {
+                self.get_inhibitive_contribution(pulse_sources, time_step)
+            }
+        };
+
+        // computing new Membrane Potential
+
+        let mut pulses_contrib_reg = Register::new(0.0);
+        Register::add(
+            self.v_mem,
+            pulses_contribution,
+            &mut self.add_reg,
+            time_step,
+        );
+        self.add_reg.copy_to(&mut pulses_contrib_reg, time_step);
+
+        match neuron_model {
+            NeuronModel::LeakyIntegrateAndFire => {
+                // computing v_mem - v_rest
+                let mut vm_vr = Register::new(0.0);
+                Register::sub(self.v_mem, self.v_rest, &mut self.add_reg, time_step);
+                self.add_reg.copy_to(&mut vm_vr, time_step);
+
+                // computing last_received_pulse_step - time_step
+                let diff_steps =
+                    Register::new(self.last_received_pulse_step as f64 - time_step as f64);
+
+                // computing exp argument
+                let mut exp_arg = Register::new(0.0);
+                Register::mult(
+                    diff_steps,
+                    Register::new(time_step_duration_ms),
+                    &mut self.mul_reg,
+                    time_step,
+                );
+                Register::div(self.mul_reg, self.tau, &mut self.div_reg, time_step);
+                self.div_reg.copy_to(&mut exp_arg, time_step);
+
+                // performing exp
+                let exp_res = Register::new(exp_arg.read_value(Some(time_step)).unwrap().exp());
+
+                // computing exp * (v_mem - v_rest)
+                let mut decay_part = Register::new(0.0);
+                Register::mult(exp_res, vm_vr, &mut self.mul_reg, time_step);
+                self.mul_reg.copy_to(&mut decay_part, time_step);
+
+                // computing decay_part + pulses_contrib_reg
+                Register::add(decay_part, pulses_contrib_reg, &mut self.add_reg, time_step);
+                self.add_reg.copy_to(&mut self.v_mem, time_step);
+            }
+            NeuronModel::IntegrateAndFire => {
+                pulses_contrib_reg.copy_to(&mut self.v_mem, time_step);
+            }
+        }
     }
 }
 
@@ -197,4 +265,10 @@ pub enum Message {
     Pulse(usize),
     // notify the following layer that all pulses have been delivered for that time step
     GoAhead,
+}
+
+/// Specify if neuron is receiving pulses on excitatory or inhibitive layer
+enum PulseContributionMode {
+    Excitatory,
+    Inhibitive,
 }

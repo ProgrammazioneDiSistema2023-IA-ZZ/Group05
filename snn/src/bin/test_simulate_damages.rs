@@ -1,4 +1,5 @@
 use snn::network::{self, DamageModel, FaultyElement};
+use std::fs::write;
 
 fn main() {
     let network = network::json::load_from_file("sources\\snn_data.json");
@@ -17,8 +18,12 @@ fn main() {
         FaultyElement::MembranePotentials,
         FaultyElement::ResetPotentials,
         FaultyElement::PotentialsAtRest,
+        FaultyElement::Comparator,
+        FaultyElement::Adder,
+        FaultyElement::Multiplier,
+        FaultyElement::Divider,
     ];
-    let damage_type = DamageModel::StuckAt0;
+    let damage_type = DamageModel::TransientBitFlip;
     let output = network
         .simulate(faulty_elements, damage_type, 10000, input)
         .unwrap();
@@ -28,7 +33,7 @@ fn main() {
     .enumerate()
     .for_each(|(ind, v)| println!("out{}: {:?}", ind, v)); */
 
-    let output_matrix = output.diffs;
+    let output_matrix = &output.diffs;
 
     for i in 0..3 {
         print!("out{i}: ");
@@ -37,4 +42,9 @@ fn main() {
         }
         println!();
     }
+
+    // Write full simulation result to file
+    let output_path = "output\\simulation_output.json";
+    let serialized = serde_json::to_string(&output).unwrap();
+    let _ = write(output_path, serialized).unwrap();
 }

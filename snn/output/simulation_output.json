@@ -1,224 +1,888 @@
 {
+    "number_of_iterations": 1000,
+    "type_of_damage": "StuckAt0",
     "output_without_damages": [
         [
-            false,
             true,
             false,
-            true,
             false,
-            true,
             false,
-            true,
             false,
-            true
+            false,
+            false,
+            false,
+            false,
+            false
         ],
         [
             true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
             false,
-            true
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
         ],
         [
             true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
             false,
-            true
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
         ]
     ],
     "diffs": [
         [
             {
+                "output_index": 0,
+                "time_step": 0,
+                "actual_value": false,
                 "diff_count": 1,
-                "at_iterations": [
-                    952
+                "damage_details": [
+                    {
+                        "at_iteration": 657,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 2,
+                        "at_neuron": 0,
+                        "at_bit": 52
+                    }
                 ]
             },
             {
+                "output_index": 0,
+                "time_step": 1,
+                "actual_value": false,
                 "diff_count": 0,
-                "at_iterations": []
+                "damage_details": []
             },
             {
-                "diff_count": 5,
-                "at_iterations": [
-                    16,
-                    145,
-                    314,
-                    943,
-                    952
+                "output_index": 0,
+                "time_step": 2,
+                "actual_value": true,
+                "diff_count": 1,
+                "damage_details": [
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    }
                 ]
             },
             {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 5,
-                "at_iterations": [
-                    16,
-                    145,
-                    314,
-                    943,
-                    952
+                "output_index": 0,
+                "time_step": 3,
+                "actual_value": true,
+                "diff_count": 8,
+                "damage_details": [
+                    {
+                        "at_iteration": 125,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 49
+                    },
+                    {
+                        "at_iteration": 159,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 0,
+                        "at_neuron": 3,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 501,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 528,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 0,
+                        "at_bit": 62
+                    },
+                    {
+                        "at_iteration": 598,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 756,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 0,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 763,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 63
+                    },
+                    {
+                        "at_iteration": 790,
+                        "damage_type": "Adder",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 63
+                    }
                 ]
             },
             {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 5,
-                "at_iterations": [
-                    16,
-                    145,
-                    314,
-                    943,
-                    952
+                "output_index": 0,
+                "time_step": 4,
+                "actual_value": true,
+                "diff_count": 6,
+                "damage_details": [
+                    {
+                        "at_iteration": 125,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 49
+                    },
+                    {
+                        "at_iteration": 136,
+                        "damage_type": "Adder",
+                        "at_layer": 1,
+                        "at_neuron": 6,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 763,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 63
+                    },
+                    {
+                        "at_iteration": 790,
+                        "damage_type": "Adder",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 63
+                    },
+                    {
+                        "at_iteration": 874,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 6,
+                        "at_bit": 54
+                    }
                 ]
             },
             {
-                "diff_count": 0,
-                "at_iterations": []
+                "output_index": 0,
+                "time_step": 5,
+                "actual_value": true,
+                "diff_count": 4,
+                "damage_details": [
+                    {
+                        "at_iteration": 501,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 528,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 0,
+                        "at_bit": 62
+                    },
+                    {
+                        "at_iteration": 598,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 756,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 0,
+                        "at_bit": 54
+                    }
+                ]
             },
             {
+                "output_index": 0,
+                "time_step": 6,
+                "actual_value": true,
+                "diff_count": 7,
+                "damage_details": [
+                    {
+                        "at_iteration": 125,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 49
+                    },
+                    {
+                        "at_iteration": 136,
+                        "damage_type": "Adder",
+                        "at_layer": 1,
+                        "at_neuron": 6,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 159,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 0,
+                        "at_neuron": 3,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 763,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 63
+                    },
+                    {
+                        "at_iteration": 790,
+                        "damage_type": "Adder",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 63
+                    },
+                    {
+                        "at_iteration": 874,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 6,
+                        "at_bit": 54
+                    }
+                ]
+            },
+            {
+                "output_index": 0,
+                "time_step": 7,
+                "actual_value": true,
+                "diff_count": 7,
+                "damage_details": [
+                    {
+                        "at_iteration": 125,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 49
+                    },
+                    {
+                        "at_iteration": 501,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 528,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 0,
+                        "at_bit": 62
+                    },
+                    {
+                        "at_iteration": 598,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 756,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 0,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 763,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 63
+                    },
+                    {
+                        "at_iteration": 790,
+                        "damage_type": "Adder",
+                        "at_layer": 0,
+                        "at_neuron": 4,
+                        "at_bit": 63
+                    }
+                ]
+            },
+            {
+                "output_index": 0,
+                "time_step": 8,
+                "actual_value": true,
                 "diff_count": 3,
-                "at_iterations": [
-                    16,
-                    145,
-                    314
+                "damage_details": [
+                    {
+                        "at_iteration": 136,
+                        "damage_type": "Adder",
+                        "at_layer": 1,
+                        "at_neuron": 6,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 874,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 6,
+                        "at_bit": 54
+                    }
                 ]
             },
             {
-                "diff_count": 0,
-                "at_iterations": []
+                "output_index": 0,
+                "time_step": 9,
+                "actual_value": true,
+                "diff_count": 4,
+                "damage_details": [
+                    {
+                        "at_iteration": 501,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 528,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 0,
+                        "at_bit": 62
+                    },
+                    {
+                        "at_iteration": 598,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 756,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 0,
+                        "at_bit": 54
+                    }
+                ]
             }
         ],
         [
             {
+                "output_index": 1,
+                "time_step": 0,
+                "actual_value": false,
+                "diff_count": 2,
+                "damage_details": [
+                    {
+                        "at_iteration": 868,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 2,
+                        "at_neuron": 1,
+                        "at_bit": 62
+                    },
+                    {
+                        "at_iteration": 966,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 2,
+                        "at_neuron": 1,
+                        "at_bit": 62
+                    }
+                ]
+            },
+            {
+                "output_index": 1,
+                "time_step": 1,
+                "actual_value": false,
+                "diff_count": 0,
+                "damage_details": []
+            },
+            {
+                "output_index": 1,
+                "time_step": 2,
+                "actual_value": true,
                 "diff_count": 1,
-                "at_iterations": [
-                    799
+                "damage_details": [
+                    {
+                        "at_iteration": 159,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 0,
+                        "at_neuron": 3,
+                        "at_bit": 52
+                    }
                 ]
             },
             {
-                "diff_count": 0,
-                "at_iterations": []
+                "output_index": 1,
+                "time_step": 3,
+                "actual_value": true,
+                "diff_count": 4,
+                "damage_details": [
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 501,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 598,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 630,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 2,
+                        "at_bit": 62
+                    }
+                ]
             },
             {
+                "output_index": 1,
+                "time_step": 4,
+                "actual_value": true,
+                "diff_count": 2,
+                "damage_details": [
+                    {
+                        "at_iteration": 159,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 0,
+                        "at_neuron": 3,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 970,
+                        "damage_type": "Multiplier",
+                        "at_layer": 1,
+                        "at_neuron": 5,
+                        "at_bit": 63
+                    }
+                ]
+            },
+            {
+                "output_index": 1,
+                "time_step": 5,
+                "actual_value": true,
+                "diff_count": 4,
+                "damage_details": [
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 501,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 598,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 630,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 2,
+                        "at_bit": 62
+                    }
+                ]
+            },
+            {
+                "output_index": 1,
+                "time_step": 6,
+                "actual_value": true,
+                "diff_count": 2,
+                "damage_details": [
+                    {
+                        "at_iteration": 159,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 0,
+                        "at_neuron": 3,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 970,
+                        "damage_type": "Multiplier",
+                        "at_layer": 1,
+                        "at_neuron": 5,
+                        "at_bit": 63
+                    }
+                ]
+            },
+            {
+                "output_index": 1,
+                "time_step": 7,
+                "actual_value": true,
+                "diff_count": 4,
+                "damage_details": [
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 501,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 598,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 630,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 2,
+                        "at_bit": 62
+                    }
+                ]
+            },
+            {
+                "output_index": 1,
+                "time_step": 8,
+                "actual_value": true,
                 "diff_count": 1,
-                "at_iterations": [
-                    799
+                "damage_details": [
+                    {
+                        "at_iteration": 970,
+                        "damage_type": "Multiplier",
+                        "at_layer": 1,
+                        "at_neuron": 5,
+                        "at_bit": 63
+                    }
                 ]
             },
             {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 1,
-                "at_iterations": [
-                    799
+                "output_index": 1,
+                "time_step": 9,
+                "actual_value": true,
+                "diff_count": 4,
+                "damage_details": [
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 501,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 598,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 1,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 630,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 2,
+                        "at_bit": 62
+                    }
                 ]
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 1,
-                "at_iterations": [
-                    799
-                ]
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 12,
-                "at_iterations": [
-                    271,
-                    331,
-                    453,
-                    509,
-                    648,
-                    679,
-                    746,
-                    770,
-                    788,
-                    816,
-                    868,
-                    898
-                ]
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
             }
         ],
         [
             {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 0,
-                "at_iterations": []
-            },
-            {
-                "diff_count": 11,
-                "at_iterations": [
-                    453,
-                    509,
-                    562,
-                    679,
-                    757,
-                    788,
-                    816,
-                    825,
-                    868,
-                    898,
-                    923
+                "output_index": 2,
+                "time_step": 0,
+                "actual_value": false,
+                "diff_count": 1,
+                "damage_details": [
+                    {
+                        "at_iteration": 44,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 2,
+                        "at_neuron": 2,
+                        "at_bit": 62
+                    }
                 ]
             },
             {
+                "output_index": 2,
+                "time_step": 1,
+                "actual_value": false,
                 "diff_count": 0,
-                "at_iterations": []
+                "damage_details": []
+            },
+            {
+                "output_index": 2,
+                "time_step": 2,
+                "actual_value": true,
+                "diff_count": 2,
+                "damage_details": [
+                    {
+                        "at_iteration": 159,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 0,
+                        "at_neuron": 3,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    }
+                ]
+            },
+            {
+                "output_index": 2,
+                "time_step": 3,
+                "actual_value": true,
+                "diff_count": 3,
+                "damage_details": [
+                    {
+                        "at_iteration": 316,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 7,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 630,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 2,
+                        "at_bit": 62
+                    },
+                    {
+                        "at_iteration": 890,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 7,
+                        "at_bit": 52
+                    }
+                ]
+            },
+            {
+                "output_index": 2,
+                "time_step": 4,
+                "actual_value": true,
+                "diff_count": 2,
+                "damage_details": [
+                    {
+                        "at_iteration": 159,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 0,
+                        "at_neuron": 3,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    }
+                ]
+            },
+            {
+                "output_index": 2,
+                "time_step": 5,
+                "actual_value": true,
+                "diff_count": 3,
+                "damage_details": [
+                    {
+                        "at_iteration": 316,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 7,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 630,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 2,
+                        "at_bit": 62
+                    },
+                    {
+                        "at_iteration": 890,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 7,
+                        "at_bit": 52
+                    }
+                ]
+            },
+            {
+                "output_index": 2,
+                "time_step": 6,
+                "actual_value": true,
+                "diff_count": 2,
+                "damage_details": [
+                    {
+                        "at_iteration": 159,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 0,
+                        "at_neuron": 3,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    }
+                ]
+            },
+            {
+                "output_index": 2,
+                "time_step": 7,
+                "actual_value": true,
+                "diff_count": 3,
+                "damage_details": [
+                    {
+                        "at_iteration": 316,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 7,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 630,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 2,
+                        "at_bit": 62
+                    },
+                    {
+                        "at_iteration": 890,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 7,
+                        "at_bit": 52
+                    }
+                ]
+            },
+            {
+                "output_index": 2,
+                "time_step": 8,
+                "actual_value": true,
+                "diff_count": 2,
+                "damage_details": [
+                    {
+                        "at_iteration": 159,
+                        "damage_type": "PotentialsAtRest",
+                        "at_layer": 0,
+                        "at_neuron": 3,
+                        "at_bit": 52
+                    },
+                    {
+                        "at_iteration": 480,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 4,
+                        "at_bit": 52
+                    }
+                ]
+            },
+            {
+                "output_index": 2,
+                "time_step": 9,
+                "actual_value": true,
+                "diff_count": 3,
+                "damage_details": [
+                    {
+                        "at_iteration": 316,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 7,
+                        "at_bit": 54
+                    },
+                    {
+                        "at_iteration": 630,
+                        "damage_type": "ResetPotentials",
+                        "at_layer": 1,
+                        "at_neuron": 2,
+                        "at_bit": 62
+                    },
+                    {
+                        "at_iteration": 890,
+                        "damage_type": "MembranePotentials",
+                        "at_layer": 1,
+                        "at_neuron": 7,
+                        "at_bit": 52
+                    }
+                ]
             }
         ]
     ]

@@ -1,6 +1,9 @@
 use rand::distributions::Uniform;
 use rand::Rng;
-use snn::network::json::{LayerData, NetworkData, NeuronData};
+use snn::network::{
+    json::{LayerData, NetworkData, NeuronData},
+    NeuronModel,
+};
 use std::{fs, path::Path};
 fn main() {
     let (nr_inputs, nr_outputs) = (6, 3);
@@ -11,6 +14,7 @@ fn main() {
         time_step_duration_us,
         nr_inputs,
         nr_outputs,
+        model: NeuronModel::LeakyIntegrateAndFire,
         layers: Vec::new(),
     };
 
@@ -28,7 +32,7 @@ fn main() {
     /*Random number generator for inter-layer weights (positive)*/
     let mut rng = rand::thread_rng();
     let min_w = 1.0;
-    let max_w = 10.0;
+    let max_w = 5.0;
     let distr = Uniform::new_inclusive(min_w, max_w);
 
     /*Random number generator for intra-layer weights (negative)*/
@@ -121,5 +125,5 @@ fn main() {
 
     let serialized = serde_json::to_string(&nd).unwrap();
 
-    let _ = fs::write(Path::new(r#"src\snn_data.json"#), serialized).unwrap();
+    let _ = fs::write(Path::new("sources\\snn_data.json"), serialized).unwrap();
 }

@@ -156,4 +156,68 @@ impl Register {
         /* Return res */
         res
     }
+
+    pub fn cmp(r1: Self, r2: Self, res_reg: &mut Self, current_time_step: usize) {
+        // reading content of r1 and r2
+        let n1 = r1.read_value(Some(current_time_step)).unwrap();
+        let n2 = r2.read_value(Some(current_time_step)).unwrap();
+
+        // computing result
+        let res = n1 - n2;
+
+        // storing result
+        res_reg.write_value(res);
+    }
+
+    pub fn add(r1: Self, r2: Self, res_reg: &mut Self, current_time_step: usize) {
+        // reading content of r1 and r2
+        let n1 = r1.read_value(Some(current_time_step)).unwrap();
+        let n2 = r2.read_value(Some(current_time_step)).unwrap();
+
+        // computing result
+        let res = n1 + n2;
+
+        // storing result
+        res_reg.write_value(res);
+    }
+
+    pub fn sub(r1: Self, r2: Self, res_reg: &mut Self, current_time_step: usize) {
+        // reading content of r1 and r2
+        let n1 = r1.read_value(Some(current_time_step)).unwrap();
+        let n2 = r2.read_value(Some(current_time_step)).unwrap();
+
+        // computing result
+        let res = n1 - n2;
+
+        // storing result
+        res_reg.write_value(res);
+    }
+
+    pub fn mult(r1: Self, r2: Self, res_reg: &mut Self, current_time_step: usize) {
+        // reading content of r1 and r2
+        let n1 = r1.read_value(Some(current_time_step)).unwrap();
+        let n2 = r2.read_value(Some(current_time_step)).unwrap();
+
+        // computing result
+        let res = n1 * n2;
+
+        // storing result
+        res_reg.write_value(res);
+    }
+
+    pub fn div(r1: Self, r2: Self, res_reg: &mut Self, current_time_step: usize) {
+        // reading content of r1 and r2
+        let n1 = r1.read_value(Some(current_time_step)).unwrap();
+        let n2 = r2.read_value(Some(current_time_step)).unwrap();
+
+        // computing result
+        let res = n1 / n2;
+
+        // storing result
+        res_reg.write_value(res);
+    }
+
+    pub fn copy_to(&self, dest_reg: &mut Self, current_time_step: usize) {
+        dest_reg.write_value(self.read_value(Some(current_time_step)).unwrap());
+    }
 }
